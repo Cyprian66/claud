@@ -42,7 +42,7 @@ Obrazki scramble są liczone geometrycznie: każda naklejka to wielokąt na bryl
 - **Inspekcja 15 s** (opcjonalna, wyłączona w konkurencjach bez patrzenia) z automatyczną karą +2 / DNF według zasad WCA.
 - **Kary** OK / +2 / DNF i usuwanie ułożenia, także z listy czasów i wykresu.
 - **Średnie WCA**: 5% odcinane z każdej strony, DNF w średniej tylko gdy jest ich więcej niż odcinanych.
-- **Dokładność** 0.00 lub 0.000, opcja **ukrycia czasu** podczas układania.
+- Czasy z dokładnością do setnych, opcja **ukrycia czasu** podczas układania.
 - **Eksport CSV** i czyszczenie sesji.
 
 ## Skróty

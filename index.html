@@ -356,7 +356,7 @@
     <section class="view" id="view-timer">
       <div class="stage" id="stage">
         <div class="scramble" id="scramble"></div>
-        <div class="timer" id="timer">0.000</div>
+        <div class="timer" id="timer">0.00</div>
         <div class="penalty-bar" id="penaltyBar"></div>
         <div class="hint" id="hint"></div>
       </div>
@@ -388,7 +388,6 @@
         <label class="row" id="inspRow"><div>Inspekcja 15 s<div class="sub">Kary +2 / DNF według zasad WCA</div></div><span class="switch"><input type="checkbox" id="optInspection"><span class="knob"></span></span></label>
         <label class="row"><div>Ukryj czas podczas układania</div><span class="switch"><input type="checkbox" id="optHideTime"><span class="knob"></span></span></label>
         <label class="row"><div>Obrazek scramble<div class="sub">Podgląd stanu łamigłówki na ekranie timera</div></div><span class="switch"><input type="checkbox" id="optImage"><span class="knob"></span></span></label>
-        <div class="row"><div>Dokładność czasu</div><select id="optPrecision"><option value="2">0.00</option><option value="3">0.000</option></select></div>
       </div>
       <div class="section-title">Sesja</div>
       <div class="group">
@@ -1024,7 +1023,7 @@
   const STORAGE_KEY = 'cubeTimer.v2';
   const LEGACY_KEY = 'cubeTimer.v1';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, precision: 3 };
+  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true };
 
   function load() {
     try {
@@ -1047,7 +1046,7 @@
     state.sessions = state.sessions.filter(s => s && EVENTS[s.event] && Array.isArray(s.solves));
     if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Default Session', event: '333', solves: [] });
     if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
-    state.precision = state.precision === 2 ? 2 : 3;
+    delete state.precision;
     if (typeof state.showImage !== 'boolean') state.showImage = true;
   }
   function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota */ } }
@@ -1059,7 +1058,7 @@
   // =====================================================================
   //  Formatting & statistics
   // =====================================================================
-  function fmt(ms, decimals = state.precision) {
+  function fmt(ms, decimals = 2) {
     if (ms == null || !isFinite(ms)) return 'DNF';
     const total = Math.floor(ms);
     const m = Math.floor(total / 60000);
@@ -1124,7 +1123,7 @@
     sessionName: $('sessionName'), eventSel: $('eventSel'),
     timesMobile: $('timesMobile'), timesSide: $('timesSide'), statsFull: $('statsFull'),
     chart: $('chart'), chartLegend: $('chartLegend'), chartTip: $('chartTip'), chartWrap: $('chartWrap'),
-    optInspection: $('optInspection'), inspRow: $('inspRow'), optHideTime: $('optHideTime'), optImage: $('optImage'), optPrecision: $('optPrecision'),
+    optInspection: $('optInspection'), inspRow: $('inspRow'), optHideTime: $('optHideTime'), optImage: $('optImage'),
     modalBg: $('modalBg'), sheet: $('sheet'), tabs: $('tabs'),
   };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -1519,12 +1518,6 @@
   el.optInspection.addEventListener('change', () => { state.inspection = el.optInspection.checked; save(); });
   el.optHideTime.addEventListener('change', () => { state.hideTime = el.optHideTime.checked; save(); });
   el.optImage.addEventListener('change', () => { state.showImage = el.optImage.checked; save(); renderImage(); });
-  el.optPrecision.addEventListener('change', () => {
-    state.precision = +el.optPrecision.value; save();
-    const s = lastSolveId && solves().find(x => x.id === lastSolveId);
-    el.timer.textContent = s ? fmtSolve(s) : zero();
-    render();
-  });
   $('btnClear').addEventListener('click', () => {
     if (!solves().length) return;
     if (confirm(`Wyczyścić wszystkie czasy w sesji „${session().name}”?`)) { session().solves = []; resetDisplay(); save(); render(); }
@@ -1547,7 +1540,6 @@
   load();
   el.optHideTime.checked = !!state.hideTime;
   el.optImage.checked = !!state.showImage;
-  el.optPrecision.value = String(state.precision);
   applyEventUI();
   el.timer.textContent = zero();
   render();
