@@ -2,12 +2,13 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cube Timer</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
   :root {
     --bg: #000000;
+    --panel: #141416;
     --card: #1c1c1e;
     --card-2: #2c2c2e;
     --text: #ffffff;
@@ -15,11 +16,10 @@
     --accent: #4f8cff;
     --ready: #34d399;
     --hold: #ff5c5c;
-    --border: #2c2c2e;
-    --radius: 18px;
+    --border: #262629;
+    --radius: 14px;
     --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
     --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
-    --tabs-h: 64px;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -29,125 +29,100 @@
     background: var(--bg);
     color: var(--text);
     font-family: var(--font);
+    font-size: 14px;
     -webkit-user-select: none;
     user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    overflow: hidden;
   }
-  button, select { font-family: var(--font); color: var(--text); }
-  button { background: none; border: 0; cursor: pointer; }
+  button, select, input { font-family: var(--font); color: var(--text); font-size: 14px; }
+  button { background: none; border: 0; cursor: pointer; padding: 0; }
   button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-  .app {
-    height: 100%;
-    display: grid;
-    grid-template-rows: auto 1fr var(--tabs-h);
-    grid-template-columns: 1fr;
-    grid-template-areas: "top" "body" "tabs";
-  }
-  /* ---------- top bar ---------- */
-  .top {
-    grid-area: top;
-    display: flex;
-    justify-content: center;
-    padding: 12px 16px 4px;
-    padding-top: max(12px, env(safe-area-inset-top));
-  }
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    background: var(--card);
-    border-radius: 14px;
-    overflow: hidden;
-    max-width: 100%;
-  }
-  .pill .session {
-    display: block;
-    padding: 10px 14px;
-    font-size: 17px;
-    font-weight: 500;
+  select.field, input.field {
+    width: 100%;
+    background: var(--card-2);
+    border: 1px solid transparent;
+    border-radius: 9px;
+    padding: 8px 32px 8px 10px;
     color: var(--text);
-    max-width: 55vw;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border-right: 1px solid var(--card-2);
-  }
-  .pill .event {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-  }
-  .pill .event select {
+    font-weight: 500;
     appearance: none;
     -webkit-appearance: none;
-    background: transparent;
-    border: 0;
-    color: var(--accent);
-    font-size: 17px;
-    font-weight: 500;
-    padding: 10px 30px 10px 14px;
-    max-width: 44vw;
-    text-overflow: ellipsis;
     cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
   }
-  .pill .event::after {
-    content: "";
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    width: 8px; height: 8px;
-    border-right: 2px solid var(--accent);
-    border-bottom: 2px solid var(--accent);
-    transform: translateY(-70%) rotate(45deg);
-    pointer-events: none;
+  input.field { background-image: none; padding-right: 10px; cursor: text; -webkit-user-select: text; user-select: text; }
+  select.field:hover { border-color: #3a3a3d; }
+  .icon-btn {
+    width: 34px; height: 34px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center;
+    color: var(--muted); flex: none;
   }
+  .icon-btn:hover { background: var(--card-2); color: var(--text); }
+  .icon-btn:disabled { opacity: 0.3; cursor: default; background: none; }
+  .icon-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .icon-btn.big { width: 40px; height: 40px; } .icon-btn.big svg { width: 22px; height: 22px; }
 
-  /* ---------- body / views ---------- */
-  .body { grid-area: body; min-height: 0; display: grid; grid-template-columns: 1fr; }
-  .view { min-height: 0; overflow-y: auto; padding: 0 16px; }
-  .view.scroll { padding-bottom: 16px; }
+  /* ---------- layout ---------- */
+  .app { height: 100%; min-width: 1000px; display: grid; grid-template-columns: 320px 1fr; }
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .sb-head { padding: 14px 14px 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--border); }
+  .sb-row { display: flex; gap: 6px; align-items: center; }
+  .sb-row select { flex: 1; min-width: 0; }
+  .sb-label { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+  .sb-stats {
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
+    display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 5px 10px; font-size: 13px;
+  }
+  .sb-stats .l { color: var(--muted); }
+  .sb-stats .v { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+  .sb-stats .v.dnf { color: var(--hold); }
+  .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 6px; }
+  .times table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .times th, .times td { padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+  .times th { color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; position: sticky; top: 0; background: var(--panel); }
+  .times td:first-child, .times th:first-child { text-align: left; color: var(--muted); width: 36px; }
+  .times tr { cursor: pointer; }
+  .times tbody tr:hover { background: var(--card); }
+  .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .times td.best { color: var(--ready); font-weight: 600; }
+  .times td.dnf { color: var(--hold); }
+  .times .empty { padding: 40px 16px; color: var(--muted); text-align: center; line-height: 1.5; }
+  .sb-foot { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
+  .sb-foot button { flex: 1; background: var(--card-2); border-radius: 9px; padding: 8px 10px; font-weight: 500; }
+  .sb-foot button:hover { background: #38383b; }
+  .sb-foot button.danger { color: var(--hold); }
 
-  /* timer view */
-  #view-timer {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    transition: background 0.15s;
-    border-radius: 0;
-  }
-  #view-timer.holding { background: #2a1519; }
-  #view-timer.ready { background: #0f2a1f; }
-  #view-timer.inspecting { background: #14151f; }
-  .stage {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 6vh;
-    padding: 8px 0;
-  }
+  .main { display: flex; flex-direction: column; min-height: 0; position: relative; transition: background 0.15s; }
+  .main.holding { background: #22111a; }
+  .main.ready { background: #0d2419; }
+  .main.inspecting { background: #10121c; }
+  .scr-bar { display: flex; align-items: center; gap: 8px; padding: 14px 18px 6px; }
   .scramble {
+    flex: 1;
     font-family: var(--mono);
     font-weight: 500;
-    font-size: clamp(15px, 2.4vmin, 26px);
-    line-height: 1.7;
+    font-size: clamp(15px, 1.55vw, 24px);
+    line-height: 1.65;
     text-align: center;
-    max-width: 900px;
     white-space: pre-line;
-    max-height: 30vh;
+    max-height: 26vh;
     overflow-y: auto;
-    color: var(--text);
+    padding: 6px 10px;
+    border-radius: 10px;
   }
-  .scramble.long { font-size: clamp(13px, 1.9vmin, 20px); }
-  .scramble.multi { text-align: left; font-size: clamp(12px, 1.8vmin, 19px); line-height: 1.55; }
+  .scramble.long { font-size: clamp(13px, 1.2vw, 19px); }
+  .scramble.multi { text-align: left; font-size: clamp(12px, 1.1vw, 17px); line-height: 1.5; max-width: 760px; margin: 0 auto; }
   .scramble.hidden-during-solve { visibility: hidden; }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 10px 20px; }
   .timer {
     font-family: var(--mono);
     font-weight: 600;
-    font-size: clamp(56px, 13vmin, 150px);
+    font-size: clamp(64px, 11vw, 190px);
     line-height: 1;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -156,268 +131,116 @@
   .holding .timer { color: var(--hold); }
   .ready .timer { color: var(--ready); }
   .inspecting .timer { color: var(--accent); }
-  .penalty-bar { display: flex; gap: 8px; min-height: 34px; justify-content: center; align-items: center; margin-top: -3vh; }
-  .penalty-bar:empty { margin-top: 0; min-height: 0; }
-  .penalty-bar button, .chip {
-    background: var(--card);
-    border-radius: 10px;
-    padding: 7px 14px;
-    font-size: 14px;
-    font-weight: 500;
-  }
+  .penalty-bar { display: flex; gap: 8px; min-height: 34px; align-items: center; }
+  .penalty-bar button { background: var(--card); border-radius: 9px; padding: 7px 14px; font-weight: 500; }
+  .penalty-bar button:hover { background: var(--card-2); }
   .penalty-bar button.primary { background: var(--accent); color: #fff; }
   .penalty-bar button.danger { color: var(--hold); }
-  .hint { color: var(--muted); font-size: 13px; text-align: center; max-width: 520px; margin-top: -3vh; }
+  .hint { color: var(--muted); font-size: 13px; text-align: center; max-width: 560px; }
 
-  .cards {
-    flex: none;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-    padding: 8px 0 12px;
-  }
-  .cards.no-image { grid-template-columns: 1fr; }
-  .card {
-    background: var(--card);
-    border-radius: var(--radius);
-    min-height: 150px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 14px;
-  }
-  .card.image { cursor: zoom-in; }
-  .card.image svg { width: 100%; height: 100%; max-height: 190px; display: block; }
-  .card.stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: 1fr 1fr;
-    gap: 6px 12px;
-    align-items: center;
-  }
+  .panels { display: flex; gap: 14px; padding: 0 18px 18px; justify-content: flex-end; align-items: stretch; flex-wrap: wrap; }
+  .panel { background: var(--card); border-radius: var(--radius); }
+  .panel.image { width: 300px; height: 200px; padding: 12px; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
+  .panel.image svg { width: 100%; height: 100%; display: block; }
+  .panel.stats { width: 300px; height: 200px; padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto 1fr; gap: 4px 12px; align-items: center; }
+  .panel.stats .divider { grid-column: 1 / -1; height: 1px; background: var(--card-2); }
   .stat { text-align: center; }
-  .stat .l { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
-  .stat .v { font-family: var(--mono); font-weight: 600; font-size: clamp(18px, 3.4vmin, 30px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .stat .l { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .stat .v { font-family: var(--mono); font-weight: 600; font-size: 26px; font-variant-numeric: tabular-nums; white-space: nowrap; }
   .stat .v.dnf { color: var(--hold); }
-  .card.stats .divider { grid-column: 1 / -1; height: 1px; background: var(--card-2); }
 
-  /* times list */
-  .times table { width: 100%; border-collapse: collapse; font-size: 15px; }
-  .times th, .times td { padding: 9px 8px; text-align: right; border-bottom: 1px solid var(--border); }
-  .times th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; position: sticky; top: 0; background: var(--bg); }
-  .times td:first-child, .times th:first-child { text-align: left; color: var(--muted); }
-  .times tr { cursor: pointer; }
-  .times tbody tr:hover { background: var(--card); }
-  .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .times td.best { color: var(--ready); font-weight: 600; }
-  .times .empty { padding: 48px 16px; color: var(--muted); text-align: center; }
-  .side { display: none; }
-
-  /* generic section styling for stats/settings */
-  .section-title { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 22px 0 8px 4px; }
-  .group { background: var(--card); border-radius: var(--radius); overflow: hidden; }
-  .row {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    padding: 13px 16px; min-height: 50px;
-    border-bottom: 1px solid var(--card-2);
-    font-size: 16px;
-  }
-  .row:last-child { border-bottom: 0; }
-  .row .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
-  .row .value { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
-  .row .value.dnf { color: var(--hold); }
-  .row button.action { color: var(--accent); font-size: 16px; padding: 0; }
-  .row button.action.danger { color: var(--hold); }
-  .row select {
-    background: var(--card-2); border: 0; border-radius: 8px; padding: 6px 10px; font-size: 15px;
-  }
-  /* toggle switch */
-  .switch { position: relative; width: 51px; height: 31px; flex: none; }
-  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
-  .switch .knob {
-    position: absolute; inset: 0; background: #39393d; border-radius: 16px; transition: background 0.15s; cursor: pointer;
-  }
-  .switch .knob::after {
-    content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
-    background: #fff; transition: transform 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
-  }
-  .switch input:checked + .knob { background: var(--ready); }
-  .switch input:checked + .knob::after { transform: translateX(20px); }
-  .switch input:disabled + .knob { opacity: 0.4; cursor: default; }
-  .switch input:focus-visible + .knob { outline: 2px solid var(--accent); }
-
-  /* chart */
-  .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 14px 10px 8px; }
-  .chart-wrap svg { width: 100%; height: 220px; display: block; overflow: visible; }
-  .chart-legend { display: flex; gap: 16px; padding: 4px 6px 0; color: var(--muted); font-size: 12px; }
-  .chart-legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
-  .chart-tip {
-    position: absolute; pointer-events: none; background: var(--card-2); color: var(--text);
-    padding: 6px 9px; border-radius: 8px; font-size: 12px; font-family: var(--mono); white-space: nowrap;
-    transform: translate(-50%, -110%); display: none;
-  }
-
-  /* ---------- tabs ---------- */
-  .tabs {
-    grid-area: tabs;
-    display: flex;
-    justify-content: space-around;
-    align-items: stretch;
-    border-top: 1px solid var(--border);
-    background: var(--bg);
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-  .tabs button {
-    flex: 1;
-    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
-    color: var(--muted);
-    font-size: 10px;
-    position: relative;
-  }
-  .tabs button svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
-  .tabs button.active { color: var(--text); }
-  .tabs button.active::after {
-    content: ""; position: absolute; bottom: 6px; width: 40px; height: 3px; border-radius: 2px; background: var(--accent);
-  }
-
-  /* ---------- modal / sheet ---------- */
-  .modal-bg {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
-    display: none; align-items: flex-end; justify-content: center; z-index: 20;
-  }
+  /* ---------- modal ---------- */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
   .modal-bg.open { display: flex; }
-  .sheet {
-    background: var(--card);
-    border-radius: 22px 22px 0 0;
-    width: min(560px, 100vw);
-    max-height: 85vh;
-    overflow-y: auto;
-    padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+  .dialog {
+    background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+    width: min(440px, 100%); max-height: 90vh; overflow-y: auto; padding: 20px;
     -webkit-user-select: text; user-select: text;
   }
-  .sheet .grab { width: 40px; height: 4px; border-radius: 2px; background: #48484a; margin: 0 auto 14px; }
-  .sheet h2 { margin: 0 0 14px; font-size: 18px; text-align: center; }
-  .sheet .big { font-family: var(--mono); font-weight: 600; font-size: 44px; text-align: center; margin-bottom: 6px; }
-  .sheet .big.dnf { color: var(--hold); }
-  .sheet .scr { font-family: var(--mono); color: var(--muted); font-size: 13px; line-height: 1.6; white-space: pre-line; text-align: center; margin: 0 auto 14px; }
-  .sheet .preview svg { width: 100%; max-height: 220px; display: block; margin: 0 auto 14px; }
-  .sheet .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
-  .sheet .actions button { background: var(--card-2); border-radius: 12px; padding: 10px 16px; font-size: 15px; font-weight: 500; }
-  .sheet .actions button.primary { background: var(--accent); color: #fff; }
-  .sheet .actions button.danger { color: var(--hold); }
-  .sheet .list .row { padding: 12px 6px; cursor: pointer; }
-  .sheet .list .row.current { color: var(--accent); }
-  .sheet .list .row .name { font-weight: 500; }
-  .sheet .list .row .tools { display: flex; gap: 4px; }
-  .sheet .list .row .tools button { color: var(--muted); padding: 6px; border-radius: 8px; }
-  .sheet .list .row .tools button:hover { background: var(--card-2); color: var(--text); }
-  .sheet .list .row .tools svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
-  .sheet .zoom svg { width: 100%; max-height: 70vh; display: block; }
+  .dialog.wide { width: min(820px, 100%); }
+  .dialog h2 { margin: 0 0 12px; font-size: 18px; }
+  .dialog p { margin: 0 0 14px; color: var(--muted); line-height: 1.5; }
+  .dialog .big { font-family: var(--mono); font-weight: 600; font-size: 44px; text-align: center; margin: 4px 0 8px; }
+  .dialog .big.dnf { color: var(--hold); }
+  .dialog .scr { font-family: var(--mono); color: var(--muted); font-size: 13px; line-height: 1.6; white-space: pre-line; text-align: center; margin: 0 auto 14px; }
+  .dialog .preview svg { width: 100%; max-height: 240px; display: block; margin: 0 auto 14px; }
+  .dialog .zoom svg { width: 100%; max-height: 70vh; display: block; }
+  .dialog .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
+  .dialog .actions .spacer { flex: 1; }
+  .dialog .actions button { background: var(--card-2); border-radius: 10px; padding: 9px 16px; font-weight: 500; }
+  .dialog .actions button:hover { background: #38383b; }
+  .dialog .actions button.primary { background: var(--accent); color: #fff; }
+  .dialog .actions button.danger { color: var(--hold); }
+  .dialog .actions button.danger.primary { background: var(--hold); color: #fff; }
+  .group { background: var(--panel); border-radius: 12px; overflow: hidden; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; min-height: 48px; border-bottom: 1px solid var(--card-2); font-size: 15px; }
+  .row:last-child { border-bottom: 0; }
+  .row .sub { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .row .value { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .row .value.dnf { color: var(--hold); }
+  .section-title { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin: 16px 0 6px 4px; }
+  .section-title:first-child { margin-top: 0; }
+  .switch { position: relative; width: 46px; height: 28px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch .knob { position: absolute; inset: 0; background: #39393d; border-radius: 14px; transition: background 0.15s; cursor: pointer; }
+  .switch .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 24px; height: 24px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+  .switch input:checked + .knob { background: var(--ready); }
+  .switch input:checked + .knob::after { transform: translateX(18px); }
+  .switch input:disabled + .knob { opacity: 0.4; cursor: default; }
+  .switch input:focus-visible + .knob { outline: 2px solid var(--accent); }
+  .chart-wrap { background: var(--panel); border-radius: 12px; padding: 12px 10px 6px; position: relative; }
+  .chart-wrap svg { width: 100%; height: 240px; display: block; overflow: visible; }
+  .chart-legend { display: flex; gap: 16px; padding: 4px 6px 0; color: var(--muted); font-size: 12px; }
+  .chart-legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+  .chart-tip { position: absolute; pointer-events: none; background: var(--card-2); color: var(--text); padding: 6px 9px; border-radius: 8px; font-size: 12px; font-family: var(--mono); white-space: nowrap; transform: translate(-50%, -110%); display: none; }
+  .kbd { font-family: var(--mono); background: var(--card-2); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
 
-  /* ---------- desktop ---------- */
-  @media (min-width: 960px) {
-    .app {
-      grid-template-columns: 1fr 380px;
-      grid-template-areas: "top top" "body side" "tabs tabs";
-    }
-    .side {
-      grid-area: side;
-      display: flex; flex-direction: column;
-      border-left: 1px solid var(--border);
-      min-height: 0;
-    }
-    .side .side-head { padding: 14px 16px 6px; color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
-    .side .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 8px; }
-    .tabs button[data-tab="times"] { display: none; }
-    .view { padding: 0 32px; }
-    .view.scroll { max-width: 860px; width: 100%; margin: 0 auto; }
-    .cards { max-width: 820px; width: 100%; margin: 0 auto; gap: 18px; }
-    .card { min-height: 170px; }
-    .modal-bg { align-items: center; }
-    .sheet { border-radius: 22px; padding-bottom: 20px; }
-    .sheet .grab { display: none; }
-  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
-<div class="app">
-  <header class="top">
-    <div class="pill">
-      <button class="session" id="sessionBtn" title="Sesje">Default Session</button>
-      <div class="event"><select id="eventSel" title="Konkurencja"></select></div>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-label">Sesja</div>
+      <div class="sb-row">
+        <select class="field" id="sessionSel" title="Sesja"></select>
+        <button class="icon-btn" id="btnNewSession" title="Nowa sesja"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+        <button class="icon-btn" id="btnRename" title="Zmień nazwę sesji"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
+        <button class="icon-btn" id="btnDeleteSession" title="Usuń sesję"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      </div>
+      <div class="sb-label">Konkurencja</div>
+      <select class="field" id="eventSel" title="Konkurencja"></select>
     </div>
-  </header>
-
-  <div class="body">
-    <section class="view" id="view-timer">
-      <div class="stage" id="stage">
-        <div class="scramble" id="scramble"></div>
-        <div class="timer" id="timer">0.00</div>
-        <div class="penalty-bar" id="penaltyBar"></div>
-        <div class="hint" id="hint"></div>
-      </div>
-      <div class="cards" id="cards">
-        <div class="card image" id="imgCard" title="Powiększ"><div id="scrImg"></div></div>
-        <div class="card stats" id="miniStats"></div>
-      </div>
-    </section>
-
-    <section class="view scroll" id="view-times" hidden>
-      <div class="section-title">Czasy w sesji</div>
-      <div class="times" id="timesMobile"></div>
-    </section>
-
-    <section class="view scroll" id="view-stats" hidden>
-      <div class="section-title">Wykres</div>
-      <div class="chart-wrap" id="chartWrap" style="position:relative">
-        <svg id="chart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Wykres czasów w sesji"></svg>
-        <div class="chart-legend" id="chartLegend"></div>
-        <div class="chart-tip" id="chartTip"></div>
-      </div>
-      <div class="section-title">Statystyki</div>
-      <div class="group" id="statsFull"></div>
-    </section>
-
-    <section class="view scroll" id="view-settings" hidden>
-      <div class="section-title">Timer</div>
-      <div class="group">
-        <label class="row" id="inspRow"><div>Inspekcja 15 s<div class="sub">Kary +2 / DNF według zasad WCA</div></div><span class="switch"><input type="checkbox" id="optInspection"><span class="knob"></span></span></label>
-        <label class="row"><div>Ukryj czas podczas układania</div><span class="switch"><input type="checkbox" id="optHideTime"><span class="knob"></span></span></label>
-        <label class="row"><div>Obrazek scramble<div class="sub">Podgląd stanu łamigłówki na ekranie timera</div></div><span class="switch"><input type="checkbox" id="optImage"><span class="knob"></span></span></label>
-      </div>
-      <div class="section-title">Sesja</div>
-      <div class="group">
-        <div class="row"><div>Zmień nazwę sesji</div><button class="action" id="btnRename">Zmień</button></div>
-        <div class="row"><div>Eksportuj czasy<div class="sub">Plik CSV z czasami, karami i scramble</div></div><button class="action" id="btnExport">Eksportuj</button></div>
-        <div class="row"><div>Wyczyść czasy w sesji</div><button class="action danger" id="btnClear">Wyczyść</button></div>
-      </div>
-      <div class="section-title">Skróty</div>
-      <div class="group">
-        <div class="row"><div>Start</div><div class="sub">przytrzymaj spację lub ekran, puść gdy zielony</div></div>
-        <div class="row"><div>Stop</div><div class="sub">dowolny klawisz lub dotknięcie</div></div>
-        <div class="row"><div>Nowy scramble</div><div class="sub">klawisz N</div></div>
-        <div class="row"><div>Anuluj inspekcję</div><div class="sub">Esc</div></div>
-      </div>
-    </section>
-  </div>
-
-  <aside class="side" id="side">
-    <div class="side-head">Czasy w sesji</div>
-    <div class="times" id="timesSide"></div>
+    <div class="sb-stats" id="sbStats"></div>
+    <div class="times" id="timesList"></div>
+    <div class="sb-foot">
+      <button id="btnStats">Statystyki</button>
+      <button id="btnExport">CSV</button>
+      <button id="btnClear" class="danger">Wyczyść</button>
+    </div>
   </aside>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="timer" class="active" title="Timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5M12 2.5V6"/></svg>Timer</button>
-    <button data-tab="times" title="Czasy"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 9h9M7.5 12h9M7.5 15h9"/></svg>Czasy</button>
-    <button data-tab="stats" title="Statystyki"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5V12l6.7 6.7M12 12h9.5"/></svg>Statystyki</button>
-    <button data-tab="settings" title="Ustawienia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ustawienia</button>
-  </nav>
+  <main class="main" id="main">
+    <div class="scr-bar">
+      <button class="icon-btn big" id="btnPrevScr" title="Poprzedni scramble"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="scramble" id="scramble"></div>
+      <button class="icon-btn big" id="btnNextScr" title="Następny scramble (N)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="icon-btn big" id="btnSettings" title="Ustawienia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    </div>
+    <div class="stage" id="stage">
+      <div class="timer" id="timer">0.00</div>
+      <div class="penalty-bar" id="penaltyBar"></div>
+      <div class="hint" id="hint"></div>
+    </div>
+    <div class="panels" id="panels">
+      <div class="panel image" id="imgCard" title="Powiększ"><div id="scrImg"></div></div>
+      <div class="panel stats" id="miniStats"></div>
+    </div>
+  </main>
 </div>
 
-<div class="modal-bg" id="modalBg">
-  <div class="sheet" id="sheet"></div>
-</div>
+<div class="modal-bg" id="modalBg"><div class="dialog" id="dialog"></div></div>
 
 <script>
 (() => {
@@ -1020,7 +843,7 @@
   const STORAGE_KEY = 'cubeTimer.v2';
   const LEGACY_KEY = 'cubeTimer.v1';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true };
+  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, showStats: true };
 
   function load() {
     try {
@@ -1032,8 +855,8 @@
         if (old) {
           const v1 = JSON.parse(old);
           state.inspection = !!v1.inspection; state.hideTime = !!v1.hideTime;
-          for (const [ev, solves] of Object.entries(v1.sessions || {})) {
-            if (EVENTS[ev] && solves.length) state.sessions.push({ id: uid(), name: EVENTS[ev].name, event: ev, solves });
+          for (const [ev, list] of Object.entries(v1.sessions || {})) {
+            if (EVENTS[ev] && list.length) state.sessions.push({ id: uid(), name: EVENTS[ev].name, event: ev, solves: list });
           }
           if (state.sessions.length) state.current = (state.sessions.find(s => s.event === v1.cubeType) || state.sessions[0]).id;
         }
@@ -1041,10 +864,11 @@
     } catch (e) { /* ignore corrupt storage */ }
     if (!Array.isArray(state.sessions)) state.sessions = [];
     state.sessions = state.sessions.filter(s => s && EVENTS[s.event] && Array.isArray(s.solves));
-    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Default Session', event: '333', solves: [] });
+    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Sesja 1', event: '333', solves: [] });
     if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
     delete state.precision;
     if (typeof state.showImage !== 'boolean') state.showImage = true;
+    if (typeof state.showStats !== 'boolean') state.showStats = true;
   }
   function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota */ } }
   const session = () => state.sessions.find(s => s.id === state.current);
@@ -1100,14 +924,8 @@
     const valid = list.map(effectiveMs).filter(v => v !== Infinity);
     return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
   }
-  function bestSolve(list) {
-    const valid = list.filter(s => effectiveMs(s) !== Infinity);
-    return valid.length ? valid.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b) : null;
-  }
-  function worstSolve(list) {
-    const valid = list.filter(s => effectiveMs(s) !== Infinity);
-    return valid.length ? valid.reduce((a, b) => effectiveMs(a) > effectiveMs(b) ? a : b) : null;
-  }
+  const bestSolve = list => { const v = list.filter(s => effectiveMs(s) !== Infinity); return v.length ? v.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b) : null; };
+  const worstSolve = list => { const v = list.filter(s => effectiveMs(s) !== Infinity); return v.length ? v.reduce((a, b) => effectiveMs(a) > effectiveMs(b) ? a : b) : null; };
   const dash = v => v == null ? '–' : fmt(v);
 
   // =====================================================================
@@ -1115,13 +933,10 @@
   // =====================================================================
   const $ = id => document.getElementById(id);
   const el = {
-    viewTimer: $('view-timer'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
-    penaltyBar: $('penaltyBar'), cards: $('cards'), imgCard: $('imgCard'), scrImg: $('scrImg'), miniStats: $('miniStats'),
-    sessionName: $('sessionBtn'), eventSel: $('eventSel'),
-    timesMobile: $('timesMobile'), timesSide: $('timesSide'), statsFull: $('statsFull'),
-    chart: $('chart'), chartLegend: $('chartLegend'), chartTip: $('chartTip'), chartWrap: $('chartWrap'),
-    optInspection: $('optInspection'), inspRow: $('inspRow'), optHideTime: $('optHideTime'), optImage: $('optImage'),
-    modalBg: $('modalBg'), sheet: $('sheet'), tabs: $('tabs'),
+    app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
+    penaltyBar: $('penaltyBar'), panels: $('panels'), imgCard: $('imgCard'), scrImg: $('scrImg'), miniStats: $('miniStats'),
+    sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), timesList: $('timesList'),
+    btnPrevScr: $('btnPrevScr'), modalBg: $('modalBg'), dialog: $('dialog'),
   };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
@@ -1137,50 +952,87 @@
     el.eventSel.appendChild(og);
   }
 
-  // ---- tabs ----
-  let activeTab = 'timer';
-  function setTab(name) {
-    activeTab = name;
-    for (const b of el.tabs.querySelectorAll('button')) b.classList.toggle('active', b.dataset.tab === name);
-    for (const v of document.querySelectorAll('.view')) v.hidden = v.id !== 'view-' + name;
-    if (name === 'stats') renderStats();
+  // ---- dialogs (the page may run in a sandbox where prompt/confirm are blocked) ----
+  let dialogResolve = null;
+  function openDialog(html, cls = '') {
+    el.dialog.className = 'dialog' + (cls ? ' ' + cls : '');
+    el.dialog.innerHTML = html;
+    el.modalBg.classList.add('open');
   }
-  el.tabs.addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) setTab(b.dataset.tab); });
+  function closeDialog(result = null) {
+    el.modalBg.classList.remove('open');
+    el.dialog.innerHTML = '';
+    const r = dialogResolve; dialogResolve = null;
+    if (r) r(result);
+  }
+  const dialogOpen = () => el.modalBg.classList.contains('open');
+  // ask({ title, message, input, value, ok, danger }) -> Promise<string | true | null>
+  function ask(o) {
+    return new Promise(resolve => {
+      dialogResolve = resolve;
+      openDialog(`<h2>${esc(o.title)}</h2>${o.message ? `<p>${esc(o.message)}</p>` : ''}
+        ${o.input ? `<input class="field" id="dlgInput" type="text" maxlength="40" value="${esc(o.value || '')}" placeholder="${esc(o.input)}">` : ''}
+        <div class="actions"><button id="dlgCancel">Anuluj</button><button id="dlgOk" class="primary${o.danger ? ' danger' : ''}">${esc(o.ok || 'OK')}</button></div>`);
+      const input = $('dlgInput');
+      const ok = () => closeDialog(input ? input.value.trim() : true);
+      $('dlgOk').addEventListener('click', ok);
+      $('dlgCancel').addEventListener('click', () => closeDialog(null));
+      if (input) { input.focus(); input.select(); input.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); e.stopPropagation(); }); }
+      else $('dlgOk').focus();
+    });
+  }
+  el.modalBg.addEventListener('click', e => { if (e.target === el.modalBg) closeDialog(null); });
+
+  // =====================================================================
+  //  Scrambles with history (previous / next)
+  // =====================================================================
+  let scrHistory = [], scrIndex = -1, currentScramble = '';
+  function showScramble() {
+    currentScramble = scrHistory[scrIndex];
+    el.scramble.textContent = currentScramble;
+    el.scramble.classList.toggle('multi', currentScramble.includes('\n'));
+    el.scramble.classList.toggle('long', !currentScramble.includes('\n') && currentScramble.length > 130);
+    el.btnPrevScr.disabled = scrIndex <= 0;
+    renderImage();
+  }
+  function newScramble() {
+    scrHistory = scrHistory.slice(0, scrIndex + 1);
+    scrHistory.push(event().scr());
+    if (scrHistory.length > 50) scrHistory.shift();
+    scrIndex = scrHistory.length - 1;
+    showScramble();
+  }
+  function nextScramble() { if (scrIndex < scrHistory.length - 1) { scrIndex++; showScramble(); } else newScramble(); }
+  function prevScramble() { if (scrIndex > 0) { scrIndex--; showScramble(); } }
+  function resetScrambles() { scrHistory = []; scrIndex = -1; newScramble(); }
+  function renderImage() {
+    el.imgCard.hidden = !state.showImage;
+    el.miniStats.hidden = !state.showStats;
+    el.scrImg.innerHTML = state.showImage ? scrambleSvg(session().event, currentScramble) : '';
+  }
+  $('btnNextScr').addEventListener('click', e => { nextScramble(); e.currentTarget.blur(); });
+  el.btnPrevScr.addEventListener('click', e => { prevScramble(); e.currentTarget.blur(); });
 
   // =====================================================================
   //  Timer state machine
   // =====================================================================
   const HOLD_MS = 500, INSPECTION_MS = 15000;
-  let phase = 'idle', holdTimer = null, startTime = 0, rafId = null, inspectionStart = 0, inspectionPenalty = null;
-  let currentScramble = '', lastSolveId = null;
-
+  let phase = 'idle', holdTimer = null, startTime = 0, rafId = null, inspectionStart = 0, inspectionPenalty = null, lastSolveId = null;
   const zero = () => fmt(0);
   function idleHint() {
-    if (!event().insp) return 'Bez inspekcji: zapamiętywanie liczy się do czasu. Przytrzymaj spację lub ekran, aż timer zrobi się zielony, potem puść.';
-    return 'Przytrzymaj spację lub ekran, aż timer zrobi się zielony, potem puść, aby wystartować.';
+    if (!event().insp) return 'Bez inspekcji: zapamiętywanie liczy się do czasu. Przytrzymaj spację, aż timer zrobi się zielony, potem puść.';
+    return 'Przytrzymaj spację (lub kliknij i trzymaj), aż timer zrobi się zielony, potem puść, aby wystartować.';
   }
   function setPhase(p) {
     phase = p;
-    el.viewTimer.classList.toggle('holding', p === 'holding' || p === 'inspHolding');
-    el.viewTimer.classList.toggle('ready', p === 'ready' || p === 'inspReady');
-    el.viewTimer.classList.toggle('inspecting', p.startsWith('insp'));
+    el.main.classList.toggle('holding', p === 'holding' || p === 'inspHolding');
+    el.main.classList.toggle('ready', p === 'ready' || p === 'inspReady');
+    el.main.classList.toggle('inspecting', p.startsWith('insp'));
     el.scramble.classList.toggle('hidden-during-solve', p === 'running');
-    el.cards.style.visibility = p === 'running' ? 'hidden' : '';
-    if (p === 'running') { el.hint.textContent = 'Dotknij lub naciśnij dowolny klawisz, aby zatrzymać.'; el.penaltyBar.innerHTML = ''; }
-    else if (p === 'inspecting') el.hint.textContent = 'Inspekcja. Przytrzymaj, aby wystartować.';
+    el.panels.style.visibility = p === 'running' ? 'hidden' : '';
+    if (p === 'running') { el.hint.textContent = 'Naciśnij dowolny klawisz lub kliknij, aby zatrzymać.'; el.penaltyBar.innerHTML = ''; }
+    else if (p === 'inspecting') el.hint.textContent = 'Inspekcja. Przytrzymaj spację, aby wystartować.';
     else if (p === 'idle') el.hint.textContent = idleHint();
-  }
-  function newScramble() {
-    currentScramble = event().scr();
-    el.scramble.textContent = currentScramble;
-    el.scramble.classList.toggle('multi', currentScramble.includes('\n'));
-    el.scramble.classList.toggle('long', !currentScramble.includes('\n') && currentScramble.length > 130);
-    renderImage();
-  }
-  function renderImage() {
-    el.imgCard.hidden = !state.showImage;
-    el.cards.classList.toggle('no-image', !state.showImage);
-    el.scrImg.innerHTML = state.showImage ? scrambleSvg(session().event, currentScramble) : '';
   }
   function tick() {
     if (phase === 'running') {
@@ -1239,13 +1091,14 @@
     if (idx < 0) return;
     list.splice(idx, 1); save();
     if (id === lastSolveId) resetDisplay();
-    closeSheet(); render();
+    render();
   }
   function resetDisplay() { lastSolveId = null; el.timer.textContent = zero(); el.penaltyBar.innerHTML = ''; }
+  function cancelTiming() { if (phase !== 'idle') { cancelAnimationFrame(rafId); clearTimeout(holdTimer); setPhase('idle'); el.timer.textContent = zero(); } }
 
   // ---- input ----
   function press() {
-    if (el.modalBg.classList.contains('open') || activeTab !== 'timer') return;
+    if (dialogOpen()) return;
     if (phase === 'running') { stopRunning(); return; }
     if (phase === 'idle') { if (inspectionActive()) startInspection(); else beginHold('holding', 'ready'); }
     else if (phase === 'inspecting') beginHold('inspHolding', 'inspReady');
@@ -1268,49 +1121,54 @@
   let spaceDown = false;
   document.addEventListener('keydown', e => {
     if (e.repeat) return;
+    if (dialogOpen()) { if (e.key === 'Escape') closeDialog(null); return; }
     if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
     if (phase === 'running') { e.preventDefault(); stopRunning(); return; }
-    if (e.code === 'Space') { if (activeTab === 'timer' && !el.modalBg.classList.contains('open')) { e.preventDefault(); spaceDown = true; press(); } }
-    else if (e.code === 'Escape') {
-      if (el.modalBg.classList.contains('open')) closeSheet();
-      else if (phase.startsWith('insp')) { cancelAnimationFrame(rafId); setPhase('idle'); el.timer.textContent = zero(); }
-    }
-    else if ((e.key === 'n' || e.key === 'N') && activeTab === 'timer') newScramble();
+    if (e.code === 'Space') { e.preventDefault(); if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') e.target.blur(); spaceDown = true; press(); }
+    else if (e.code === 'Escape') { if (phase.startsWith('insp')) cancelTiming(); }
+    else if (e.key === 'n' || e.key === 'N') nextScramble();
+    else if (e.key === 'p' || e.key === 'P') prevScramble();
   });
   document.addEventListener('keyup', e => { if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); } });
   let pointerDown = false;
-  el.viewTimer.addEventListener('pointerdown', e => {
-    if (phase !== 'running' && e.target.closest('.cards, button, select, input, a, label')) return;
+  el.stage.addEventListener('pointerdown', e => {
+    if (phase !== 'running' && e.target.closest('button')) return;
     e.preventDefault(); pointerDown = true; press();
   });
   const pointerUp = () => { if (pointerDown) { pointerDown = false; release(); } };
-  el.viewTimer.addEventListener('pointerup', pointerUp);
-  el.viewTimer.addEventListener('pointercancel', pointerUp);
-  el.viewTimer.addEventListener('pointerleave', pointerUp);
+  el.stage.addEventListener('pointerup', pointerUp);
+  el.stage.addEventListener('pointercancel', pointerUp);
+  el.stage.addEventListener('pointerleave', pointerUp);
 
   // =====================================================================
   //  Rendering
   // =====================================================================
-  function statTile(label, value) {
-    const dnf = value === 'DNF';
-    return `<div class="stat"><div class="l">${label}</div><div class="v${dnf ? ' dnf' : ''}">${value}</div></div>`;
+  const tile = (label, value) => `<div class="stat"><div class="l">${label}</div><div class="v${value === 'DNF' ? ' dnf' : ''}">${value}</div></div>`;
+  const sbRow = (label, value) => `<span class="l">${label}</span><span class="v${value === 'DNF' ? ' dnf' : ''}">${value}</span>`;
+  function renderSessionSelect() {
+    el.sessionSel.innerHTML = state.sessions.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    el.sessionSel.value = state.current;
+    $('btnDeleteSession').disabled = state.sessions.length <= 1;
   }
   function render() {
     const list = solves(), ev = event(), best = bestSolve(list);
-    el.sessionName.textContent = session().name;
+    renderSessionSelect();
     el.eventSel.value = session().event;
     document.title = `${session().name} · ${ev.name} · Cube Timer`;
 
     if (ev.fmt === 'ao') {
-      el.miniStats.innerHTML = statTile('ao5', dash(lastN(list, 5, average))) + statTile('ao12', dash(lastN(list, 12, average)))
-        + '<div class="divider"></div>' + statTile('ao100', dash(lastN(list, 100, average))) + statTile('mean', dash(mean(list)));
+      el.miniStats.innerHTML = tile('ao5', dash(lastN(list, 5, average))) + tile('ao12', dash(lastN(list, 12, average)))
+        + '<div class="divider"></div>' + tile('ao100', dash(lastN(list, 100, average))) + tile('mean', dash(mean(list)));
     } else {
-      el.miniStats.innerHTML = statTile('mo3', dash(lastN(list, 3, meanOf))) + statTile('ao5', dash(lastN(list, 5, average)))
-        + '<div class="divider"></div>' + statTile('best', best ? fmtSolve(best) : '–') + statTile('mean', dash(mean(list)));
+      el.miniStats.innerHTML = tile('mo3', dash(lastN(list, 3, meanOf))) + tile('ao5', dash(lastN(list, 5, average)))
+        + '<div class="divider"></div>' + tile('best', best ? fmtSolve(best) : '–') + tile('mean', dash(mean(list)));
     }
+    const sb = [sbRow('Ułożenia', list.length), sbRow('Najlepszy', best ? fmtSolve(best) : '–'), sbRow('Średnia', dash(mean(list)))];
+    if (ev.fmt === 'mo3') sb.push(sbRow('mo3', dash(lastN(list, 3, meanOf))), sbRow('ao5', dash(lastN(list, 5, average))), sbRow('Najl. mo3', dash(bestN(list, 3, meanOf))));
+    else sb.push(sbRow('ao5', dash(lastN(list, 5, average))), sbRow('ao12', dash(lastN(list, 12, average))), sbRow('ao100', dash(lastN(list, 100, average))), sbRow('Najl. ao5', dash(bestN(list, 5, average))), sbRow('Najl. ao12', dash(bestN(list, 12, average))));
+    el.sbStats.innerHTML = sb.join('');
 
-    let html;
-    if (!list.length) html = '<div class="empty">Brak ułożeń w tej sesji.<br>Zacznij układać!</div>';
+    if (!list.length) el.timesList.innerHTML = '<div class="empty">Brak ułożeń w tej sesji.<br>Przytrzymaj spację, aby zacząć.</div>';
     else {
       const rows = [];
       for (let i = list.length - 1; i >= 0; i--) {
@@ -1323,64 +1181,98 @@
           const m3 = i >= 2 ? meanOf(list.slice(i - 2, i + 1)) : null;
           extra = `<td class="time">${m3 == null ? '' : fmt(m3)}</td>`;
         }
-        rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${best && s.id === best.id ? ' best' : ''}">${fmtSolve(s)}</td>${extra}</tr>`);
+        const cls = best && s.id === best.id ? ' best' : s.penalty === 'DNF' ? ' dnf' : '';
+        rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${cls}">${fmtSolve(s)}</td>${extra}</tr>`);
       }
       const head = ev.fmt === 'ao' ? '<th>czas</th><th>ao5</th><th>ao12</th>' : '<th>czas</th><th>mo3</th>';
-      html = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
+      el.timesList.innerHTML = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
-    el.timesMobile.innerHTML = html;
-    el.timesSide.innerHTML = html;
-    if (activeTab === 'stats') renderStats();
   }
-  for (const c of [el.timesMobile, el.timesSide]) c.addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openSolve(tr.dataset.id); });
+  el.timesList.addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openSolve(tr.dataset.id); });
 
-  function statRow(label, value, sub) {
-    const dnf = value === 'DNF';
-    return `<div class="row"><div>${label}${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="value${dnf ? ' dnf' : ''}">${value}</div></div>`;
+  // ---- solve details ----
+  function openSolve(id) {
+    const s = solves().find(x => x.id === id);
+    if (!s) return;
+    const idx = solves().indexOf(s) + 1;
+    openDialog(`<h2>Ułożenie #${idx} <span style="color:var(--muted);font-weight:400;font-size:14px">· ${new Date(s.date).toLocaleString('pl-PL')}</span></h2>
+      <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
+      <div class="scr">${esc(s.scramble)}</div>
+      <div class="preview">${state.showImage ? scrambleSvg(session().event, s.scramble) : ''}</div>
+      <div class="actions" id="solveActions"></div>`);
+    const actions = $('solveActions');
+    actions.append(penaltyButtons(s, () => openSolve(id)));
+    const spacer = document.createElement('span'); spacer.className = 'spacer';
+    const del = document.createElement('button'); del.className = 'danger'; del.textContent = 'Usuń';
+    del.addEventListener('click', async () => { closeDialog(); if (await ask({ title: 'Usunąć to ułożenie?', ok: 'Usuń', danger: true })) deleteSolve(id); });
+    const close = document.createElement('button'); close.className = 'primary'; close.textContent = 'Zamknij';
+    close.addEventListener('click', () => closeDialog());
+    actions.append(spacer, del, close);
   }
-  function renderStats() {
+  el.imgCard.addEventListener('click', () => {
+    if (!currentScramble) return;
+    openDialog(`<h2>${esc(event().name)}</h2><div class="scr">${esc(currentScramble)}</div><div class="zoom">${scrambleSvg(session().event, currentScramble)}</div>
+      <div class="actions"><button class="primary" id="dlgClose">Zamknij</button></div>`, 'wide');
+    $('dlgClose').addEventListener('click', () => closeDialog());
+  });
+
+  // ---- statistics dialog with chart ----
+  const CH = { w: 600, h: 240, l: 56, r: 12, t: 12, b: 26 };
+  let chartPts = [];
+  const statRow = (label, value, sub) => `<div class="row"><div>${label}${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="value${value === 'DNF' ? ' dnf' : ''}">${value}</div></div>`;
+  function openStats() {
     const list = solves(), ev = event(), best = bestSolve(list), worst = worstSolve(list);
-    const rows = [
-      statRow('Liczba ułożeń', list.length, list.filter(s => s.penalty === 'DNF').length ? `${list.filter(s => s.penalty === 'DNF').length} DNF` : ''),
-      statRow('Najlepszy', best ? fmtSolve(best) : '–'), statRow('Najgorszy', worst ? fmtSolve(worst) : '–'),
-      statRow('Średnia (wszystkie)', dash(mean(list))),
-    ];
+    const dnfs = list.filter(s => s.penalty === 'DNF').length;
+    const rows = [statRow('Liczba ułożeń', list.length, dnfs ? `${dnfs} DNF` : ''), statRow('Najlepszy', best ? fmtSolve(best) : '–'), statRow('Najgorszy', worst ? fmtSolve(worst) : '–'), statRow('Średnia (wszystkie)', dash(mean(list)))];
     if (ev.fmt === 'mo3') rows.push(statRow('mo3', dash(lastN(list, 3, meanOf)), 'aktualne'), statRow('Najlepsze mo3', dash(bestN(list, 3, meanOf))));
     rows.push(statRow('ao5', dash(lastN(list, 5, average)), 'aktualne'), statRow('Najlepsze ao5', dash(bestN(list, 5, average))),
       statRow('ao12', dash(lastN(list, 12, average)), 'aktualne'), statRow('Najlepsze ao12', dash(bestN(list, 12, average))),
       statRow('ao100', dash(lastN(list, 100, average)), 'aktualne'), statRow('Najlepsze ao100', dash(bestN(list, 100, average))));
-    el.statsFull.innerHTML = rows.join('');
-    renderChart(list);
+    openDialog(`<h2>Statystyki · ${esc(session().name)} · ${esc(ev.name)}</h2>
+      <div class="chart-wrap" id="chartWrap"><svg id="chart" viewBox="0 0 ${CH.w} ${CH.h}" preserveAspectRatio="none" role="img" aria-label="Wykres czasów w sesji"></svg>
+      <div class="chart-legend"><span><i style="background:#4f8cff"></i>czas</span><span><i style="background:#c97a1c"></i>ao12</span></div><div class="chart-tip" id="chartTip"></div></div>
+      <div class="section-title">Statystyki</div><div class="group">${rows.join('')}</div>
+      <div class="actions"><button class="primary" id="dlgClose">Zamknij</button></div>`, 'wide');
+    $('dlgClose').addEventListener('click', () => closeDialog());
+    renderChart($('chart'), list);
+    const svg = $('chart'), tip = $('chartTip'), wrap = $('chartWrap');
+    const nearest = e => { const rect = svg.getBoundingClientRect(), px = (e.clientX - rect.left) / rect.width * CH.w; let b = chartPts[0]; for (const p of chartPts) if (Math.abs(p.x - px) < Math.abs(b.x - px)) b = p; return { b, rect }; };
+    svg.addEventListener('pointermove', e => {
+      if (!chartPts.length) return;
+      const { b, rect } = nearest(e);
+      const cur = $('chartCursor'); cur.style.display = '';
+      const line = $('chartCursorLine'); line.setAttribute('x1', b.x); line.setAttribute('x2', b.x);
+      const dot = $('chartCursorDot');
+      if (b.y != null) { dot.style.display = ''; dot.setAttribute('cx', b.x); dot.setAttribute('cy', b.y); } else dot.style.display = 'none';
+      tip.style.display = 'block'; tip.textContent = `#${b.i + 1}  ${fmtSolve(b.s)}`;
+      const wr = wrap.getBoundingClientRect();
+      tip.style.left = (rect.left - wr.left + b.x / CH.w * rect.width) + 'px';
+      tip.style.top = (rect.top - wr.top + (b.y != null ? b.y : CH.h / 2) / CH.h * rect.height) + 'px';
+    });
+    svg.addEventListener('pointerleave', () => { tip.style.display = 'none'; const c = $('chartCursor'); if (c) c.style.display = 'none'; });
+    svg.addEventListener('click', e => { if (chartPts.length) openSolve(nearest(e).b.s.id); });
   }
-
-  // ---- chart: solve times with a running ao12 ----
-  const CH = { w: 600, h: 220, l: 52, r: 12, t: 12, b: 26 };
-  let chartPts = [];
-  function renderChart(list) {
-    const svg = el.chart;
+  function renderChart(svg, list) {
     const pts = list.map((s, i) => ({ i, v: effectiveMs(s), s }));
     const valid = pts.filter(p => isFinite(p.v));
-    el.chartLegend.innerHTML = '<span><i style="background:#4f8cff"></i>czas</span><span><i style="background:#c97a1c"></i>ao12</span>';
     if (valid.length < 2) { svg.innerHTML = `<text x="${CH.w / 2}" y="${CH.h / 2}" fill="#8e8e93" font-size="13" text-anchor="middle" font-family="inherit">Wykres pojawi się po dwóch ułożeniach</text>`; chartPts = []; return; }
     const ys = valid.map(p => p.v);
     let lo = Math.min(...ys), hi = Math.max(...ys);
     if (hi === lo) { hi += 500; lo -= 500; }
-    const pad = (hi - lo) * 0.08; lo -= pad; hi += pad; if (lo < 0) lo = 0;
+    const pad = (hi - lo) * 0.08; lo = Math.max(0, lo - pad); hi += pad;
     const X = i => CH.l + (list.length === 1 ? 0 : i / (list.length - 1)) * (CH.w - CH.l - CH.r);
     const Y = v => CH.t + (1 - (v - lo) / (hi - lo)) * (CH.h - CH.t - CH.b);
     let g = '';
     for (let k = 0; k <= 4; k++) {
-      const v = lo + (hi - lo) * k / 4, y = Y(v);
-      g += `<line x1="${CH.l}" x2="${CH.w - CH.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#2c2c2e" stroke-width="1"/>`;
-      g += `<text x="${CH.l - 8}" y="${(y + 4).toFixed(1)}" fill="#8e8e93" font-size="11" text-anchor="end" font-family="JetBrains Mono, monospace">${fmt(v, 2)}</text>`;
+      const v = lo + (hi - lo) * k / 4, y = Y(v).toFixed(1);
+      g += `<line x1="${CH.l}" x2="${CH.w - CH.r}" y1="${y}" y2="${y}" stroke="#2c2c2e" stroke-width="1"/>`;
+      g += `<text x="${CH.l - 8}" y="${(+y + 4).toFixed(1)}" fill="#8e8e93" font-size="11" text-anchor="end" font-family="JetBrains Mono, monospace">${fmt(v)}</text>`;
     }
     g += `<text x="${CH.l}" y="${CH.h - 8}" fill="#8e8e93" font-size="11" font-family="inherit">1</text><text x="${CH.w - CH.r}" y="${CH.h - 8}" fill="#8e8e93" font-size="11" text-anchor="end" font-family="inherit">${list.length}</text>`;
-    // time line with gaps at DNF
     let d = '', pen = false;
     for (const p of pts) { if (!isFinite(p.v)) { pen = false; continue; } d += (pen ? 'L' : 'M') + X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1); pen = true; }
     g += `<path d="${d}" fill="none" stroke="#4f8cff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
-    if (list.length <= 60) for (const p of valid) g += `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3" fill="#4f8cff" stroke="#1c1c1e" stroke-width="2"/>`;
-    // ao12
+    if (list.length <= 60) for (const p of valid) g += `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3" fill="#4f8cff" stroke="#141416" stroke-width="2"/>`;
     let d2 = ''; pen = false;
     for (let i = 11; i < list.length; i++) {
       const a = average(list.slice(i - 11, i + 1));
@@ -1393,131 +1285,74 @@
     svg.innerHTML = g;
     chartPts = pts.map(p => ({ x: X(p.i), y: isFinite(p.v) ? Y(p.v) : null, s: p.s, i: p.i }));
   }
-  function chartHover(e) {
-    if (!chartPts.length) return;
-    const rect = el.chart.getBoundingClientRect();
-    const px = (e.clientX - rect.left) / rect.width * CH.w;
-    let best = chartPts[0];
-    for (const p of chartPts) if (Math.abs(p.x - px) < Math.abs(best.x - px)) best = p;
-    const cur = $('chartCursor');
-    if (!cur) return;
-    cur.style.display = '';
-    const line = $('chartCursorLine'); line.setAttribute('x1', best.x); line.setAttribute('x2', best.x);
-    const dot = $('chartCursorDot');
-    if (best.y != null) { dot.style.display = ''; dot.setAttribute('cx', best.x); dot.setAttribute('cy', best.y); } else dot.style.display = 'none';
-    const tip = el.chartTip;
-    tip.style.display = 'block';
-    tip.textContent = `#${best.i + 1}  ${fmtSolve(best.s)}`;
-    const wrapRect = el.chartWrap.getBoundingClientRect();
-    tip.style.left = (rect.left - wrapRect.left + best.x / CH.w * rect.width) + 'px';
-    tip.style.top = (rect.top - wrapRect.top + (best.y != null ? best.y : CH.h / 2) / CH.h * rect.height) + 'px';
+  $('btnStats').addEventListener('click', openStats);
+
+  // ---- settings dialog ----
+  function openSettings() {
+    const sw = (id, label, sub, checked, disabled) => `<label class="row"><div>${label}${sub ? `<div class="sub">${sub}</div>` : ''}</div><span class="switch"><input type="checkbox" id="${id}"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}><span class="knob"></span></span></label>`;
+    const ev = event();
+    openDialog(`<h2>Ustawienia</h2>
+      <div class="section-title">Timer</div><div class="group">
+        ${sw('optInspection', 'Inspekcja 15 s', ev.insp ? 'Kary +2 / DNF według zasad WCA' : 'Niedostępna w tej konkurencji', state.inspection && ev.insp, !ev.insp)}
+        ${sw('optHideTime', 'Ukryj czas podczas układania', '', state.hideTime)}
+      </div>
+      <div class="section-title">Panele</div><div class="group">
+        ${sw('optImage', 'Obrazek scramble', 'Stan łamigłówki po wykonaniu scramble', state.showImage)}
+        ${sw('optStats', 'Panel statystyk', 'ao5, ao12, ao100 i średnia pod timerem', state.showStats)}
+      </div>
+      <div class="section-title">Skróty</div><div class="group">
+        <div class="row"><div>Start</div><div class="sub">przytrzymaj <span class="kbd">Spacja</span>, puść gdy zielony</div></div>
+        <div class="row"><div>Stop</div><div class="sub">dowolny klawisz</div></div>
+        <div class="row"><div>Następny / poprzedni scramble</div><div class="sub"><span class="kbd">N</span> / <span class="kbd">P</span></div></div>
+        <div class="row"><div>Anuluj inspekcję</div><div class="sub"><span class="kbd">Esc</span></div></div>
+      </div>
+      <div class="actions"><button class="primary" id="dlgClose">Zamknij</button></div>`);
+    $('dlgClose').addEventListener('click', () => closeDialog());
+    $('optInspection').addEventListener('change', e => { state.inspection = e.target.checked; save(); });
+    $('optHideTime').addEventListener('change', e => { state.hideTime = e.target.checked; save(); });
+    $('optImage').addEventListener('change', e => { state.showImage = e.target.checked; save(); renderImage(); });
+    $('optStats').addEventListener('change', e => { state.showStats = e.target.checked; save(); renderImage(); });
   }
-  el.chart.addEventListener('pointermove', chartHover);
-  el.chart.addEventListener('pointerleave', () => { el.chartTip.style.display = 'none'; const c = $('chartCursor'); if (c) c.style.display = 'none'; });
-  el.chart.addEventListener('click', e => {
-    if (!chartPts.length) return;
-    const rect = el.chart.getBoundingClientRect(), px = (e.clientX - rect.left) / rect.width * CH.w;
-    let best = chartPts[0];
-    for (const p of chartPts) if (Math.abs(p.x - px) < Math.abs(best.x - px)) best = p;
-    openSolve(best.s.id);
-  });
+  $('btnSettings').addEventListener('click', openSettings);
 
   // =====================================================================
-  //  Sheets (bottom modal)
+  //  Sessions & events
   // =====================================================================
-  function openSheet(html) { el.sheet.innerHTML = '<div class="grab"></div>' + html; el.modalBg.classList.add('open'); }
-  function closeSheet() { el.modalBg.classList.remove('open'); el.sheet.innerHTML = ''; }
-  el.modalBg.addEventListener('click', e => { if (e.target === el.modalBg) closeSheet(); });
-
-  function openSolve(id) {
-    const s = solves().find(x => x.id === id);
-    if (!s) return;
-    const idx = solves().indexOf(s) + 1;
-    openSheet(`<h2>Ułożenie #${idx} · ${new Date(s.date).toLocaleString('pl-PL')}</h2>
-      <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
-      <div class="scr">${esc(s.scramble)}</div>
-      <div class="preview">${state.showImage ? scrambleSvg(session().event, s.scramble) : ''}</div>
-      <div class="actions" id="solveActions"></div>`);
-    const actions = $('solveActions');
-    actions.append(penaltyButtons(s, () => openSolve(id)));
-    const del = document.createElement('button'); del.className = 'danger'; del.textContent = 'Usuń';
-    del.addEventListener('click', () => { if (confirm('Usunąć to ułożenie?')) deleteSolve(id); });
-    const close = document.createElement('button'); close.className = 'primary'; close.textContent = 'Zamknij';
-    close.addEventListener('click', closeSheet);
-    actions.append(del, close);
-  }
-
-  const ICON_EDIT = '<svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg>';
-  const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
-  function openSessions() {
-    const rows = state.sessions.map(s => `<div class="row${s.id === state.current ? ' current' : ''}" data-id="${s.id}">
-        <div><div class="name">${esc(s.name)}</div><div class="sub">${EVENTS[s.event].name} · ${s.solves.length} ułożeń</div></div>
-        <div class="tools"><button data-act="rename" title="Zmień nazwę">${ICON_EDIT}</button><button data-act="delete" title="Usuń sesję">${ICON_TRASH}</button></div>
-      </div>`).join('');
-    openSheet(`<h2>Sesje</h2><div class="list">${rows}</div><div class="actions" style="margin-top:14px"><button class="primary" id="btnNewSession">Nowa sesja</button></div>`);
-    $('btnNewSession').addEventListener('click', () => {
-      const name = prompt('Nazwa nowej sesji:', `Sesja ${state.sessions.length + 1}`);
-      if (name === null) return;
-      const s = { id: uid(), name: name.trim() || `Sesja ${state.sessions.length + 1}`, event: session().event, solves: [] };
-      state.sessions.push(s);
-      switchSession(s.id);
-      closeSheet();
-    });
-    el.sheet.querySelector('.list').addEventListener('click', e => {
-      const row = e.target.closest('.row[data-id]'); if (!row) return;
-      const id = row.dataset.id, act = e.target.closest('button[data-act]')?.dataset.act;
-      if (act === 'rename') { renameSession(id); openSessions(); }
-      else if (act === 'delete') { if (deleteSession(id)) openSessions(); }
-      else { switchSession(id); closeSheet(); }
-    });
-  }
   function switchSession(id) {
     if (!state.sessions.some(s => s.id === id)) return;
-    if (phase.startsWith('insp')) { cancelAnimationFrame(rafId); }
-    state.current = id; resetDisplay(); setPhase('idle'); applyEventUI(); save(); render(); newScramble();
+    cancelTiming();
+    state.current = id; resetDisplay(); save(); render(); resetScrambles(); setPhase('idle');
   }
-  function renameSession(id) {
-    const s = state.sessions.find(x => x.id === id); if (!s) return;
-    const name = prompt('Nazwa sesji:', s.name);
-    if (name === null || !name.trim()) return;
-    s.name = name.trim(); save(); render();
-  }
-  function deleteSession(id) {
-    const s = state.sessions.find(x => x.id === id); if (!s) return false;
-    if (!confirm(`Usunąć sesję „${s.name}” (${s.solves.length} ułożeń)?`)) return false;
-    state.sessions = state.sessions.filter(x => x.id !== id);
-    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Default Session', event: s.event, solves: [] });
-    if (state.current === id) switchSession(state.sessions[0].id); else { save(); render(); }
-    return true;
-  }
-  $('sessionBtn').addEventListener('click', openSessions);
-  $('btnRename').addEventListener('click', () => renameSession(state.current));
-
-  el.imgCard.addEventListener('click', () => {
-    if (!currentScramble) return;
-    openSheet(`<h2>${esc(event().name)}</h2><div class="scr">${esc(currentScramble)}</div><div class="zoom">${scrambleSvg(session().event, currentScramble)}</div>`);
+  el.sessionSel.addEventListener('change', () => { switchSession(el.sessionSel.value); el.sessionSel.blur(); });
+  $('btnNewSession').addEventListener('click', async () => {
+    const name = await ask({ title: 'Nowa sesja', input: 'Nazwa sesji', value: `Sesja ${state.sessions.length + 1}`, ok: 'Utwórz' });
+    if (name === null) return;
+    const s = { id: uid(), name: name || `Sesja ${state.sessions.length + 1}`, event: session().event, solves: [] };
+    state.sessions.push(s);
+    switchSession(s.id);
   });
-
-  // ---- controls ----
-  function applyEventUI() {
-    const ev = event();
-    el.optInspection.disabled = !ev.insp;
-    el.optInspection.checked = !!state.inspection && ev.insp;
-    el.inspRow.title = ev.insp ? '' : 'W tej konkurencji nie ma inspekcji';
-  }
+  $('btnRename').addEventListener('click', async () => {
+    const name = await ask({ title: 'Zmień nazwę sesji', input: 'Nazwa sesji', value: session().name, ok: 'Zapisz' });
+    if (!name) return;
+    session().name = name; save(); render();
+  });
+  $('btnDeleteSession').addEventListener('click', async () => {
+    if (state.sessions.length <= 1) return;
+    const s = session();
+    if (!await ask({ title: `Usunąć sesję „${s.name}”?`, message: `Sesja ma ${s.solves.length} ułożeń. Tej operacji nie można cofnąć.`, ok: 'Usuń', danger: true })) return;
+    state.sessions = state.sessions.filter(x => x.id !== s.id);
+    switchSession(state.sessions[0].id);
+  });
+  // Changing the event keeps the session; it only changes which scrambles are generated.
   el.eventSel.addEventListener('change', () => {
-    const ev = el.eventSel.value;
-    if (solves().length && !confirm(`Ta sesja ma już ${solves().length} ułożeń. Zmienić konkurencję na ${EVENTS[ev].name}?`)) { el.eventSel.value = session().event; el.eventSel.blur(); return; }
-    session().event = ev;
-    resetDisplay(); applyEventUI(); save(); render(); newScramble(); setPhase('idle');
+    session().event = el.eventSel.value;
+    cancelTiming(); resetDisplay(); save(); render(); resetScrambles(); setPhase('idle');
     el.eventSel.blur();
   });
-  el.optInspection.addEventListener('change', () => { state.inspection = el.optInspection.checked; save(); });
-  el.optHideTime.addEventListener('change', () => { state.hideTime = el.optHideTime.checked; save(); });
-  el.optImage.addEventListener('change', () => { state.showImage = el.optImage.checked; save(); renderImage(); });
-  $('btnClear').addEventListener('click', () => {
+  $('btnClear').addEventListener('click', async () => {
     if (!solves().length) return;
-    if (confirm(`Wyczyścić wszystkie czasy w sesji „${session().name}”?`)) { session().solves = []; resetDisplay(); save(); render(); }
+    if (!await ask({ title: 'Wyczyścić czasy?', message: `Wszystkie ${solves().length} ułożenia w sesji „${session().name}” zostaną usunięte.`, ok: 'Wyczyść', danger: true })) return;
+    session().solves = []; resetDisplay(); save(); render();
   });
   $('btnExport').addEventListener('click', () => {
     const list = solves();
@@ -1535,12 +1370,9 @@
 
   // ---- init ----
   load();
-  el.optHideTime.checked = !!state.hideTime;
-  el.optImage.checked = !!state.showImage;
-  applyEventUI();
   el.timer.textContent = zero();
   render();
-  newScramble();
+  resetScrambles();
   setPhase('idle');
 })();
 </script>

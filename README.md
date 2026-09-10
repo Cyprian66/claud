@@ -3,17 +3,22 @@
 Timer do speedcubingu w jednym pliku HTML. Bez zależności, bez budowania.
 Wystarczy otworzyć `index.html` w przeglądarce, na komputerze lub telefonie.
 
-## Wygląd i nawigacja
+## Układ (wersja na komputer)
 
-- Czarny motyw z monospace'owym zegarem, taki sam na komputerze i telefonie.
-- U góry pasek z **nazwą sesji** (kliknięcie otwiera listę sesji: przełączanie, nowa, zmiana nazwy, usuwanie) i **konkurencją** (lista rozwijana).
-- Na dole karty: **obrazek scramble** (stan łamigłówki po wykonaniu scramble, kliknięcie powiększa) i **statystyki** (ao5, ao12, ao100, średnia lub mo3 dla konkurencji na średnią z 3).
-- Zakładki na dole: Timer, Czasy, Statystyki (wykres czasów i ao12 plus pełne statystyki), Ustawienia.
-- Na szerokim ekranie lista czasów jest stale widoczna w panelu po prawej, na telefonie w osobnej zakładce.
+Układ w stylu csTimera, ciemny motyw:
+
+- **Lewy panel**: wybór sesji (z przyciskami: nowa, zmiana nazwy, usuń), wybór konkurencji, skrócone statystyki i lista czasów. Na dole przyciski Statystyki (wykres czasów i ao12 plus pełne zestawienie), CSV i Wyczyść.
+- **Góra**: scramble z przyciskami poprzedni / następny (klawisze `P` / `N`) i ikoną ustawień.
+- **Środek**: duży zegar, po ułożeniu przyciski OK / +2 / DNF / Usuń.
+- **Dół po prawej**: panel z obrazkiem scramble (kliknięcie powiększa) i panel ao5 / ao12 / ao100 / mean. Oba można ukryć w ustawieniach.
+
+Zmiana konkurencji nie zmienia sesji: sesja zapamiętuje wybraną konkurencję, a czasy zostają na miejscu. Wszystkie okna dialogowe są własne, więc działają także w piaskownicy (np. w opublikowanym artefakcie), gdzie systemowe `prompt`/`confirm` są blokowane.
+
+Wersja na telefon jest planowana osobno.
 
 ## Sesje
 
-Każda sesja ma własną nazwę, konkurencję i listę czasów. Można mieć kilka sesji dla tej samej konkurencji (np. „3x3 rano”, „3x3 OH”). Dane zapisują się w `localStorage`, a stare sesje z poprzedniej wersji timera są automatycznie przenoszone.
+Każda sesja ma własną nazwę, konkurencję i listę czasów. Można mieć kilka sesji dla tej samej konkurencji (np. „3x3 rano”, „3x3 OH”). Dane zapisują się w `localStorage`.
 
 ## Konkurencje
 
