@@ -90,8 +90,8 @@
   table.sb-stats td:first-child { text-align: left; font-family: var(--font); color: var(--text); font-weight: 600; }
   table.sb-stats td.dnf { color: var(--hold); }
   table.sb-stats td.none { color: var(--muted); }
-  .sb-summary { text-align: center; padding: 8px 10px 10px; margin: 6px 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-weight: 600; font-size: 18px; line-height: 1.6; }
-  .sb-summary .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .sb-summary { text-align: center; padding: 8px 10px 10px; margin: 6px 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-weight: 700; font-size: 18px; line-height: 1.6; }
+  .sb-summary .mono { font-family: var(--mono); font-weight: 700; font-variant-numeric: tabular-nums; }
   .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 10px 10px; }
   .times table { width: 100%; border-collapse: collapse; font-size: 18px; }
   .times th, .times td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--border); }
@@ -109,17 +109,17 @@
   .main.holding { background: #22111a; }
   .main.ready { background: #0d2419; }
   .main.inspecting { background: #10121c; }
-  .scr-bar { padding: 8px 24px 10px; border-bottom: 1px solid var(--border); background: var(--bg); }
-  .scr-controls { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--mono); font-size: 15px; color: var(--text); }
-  .scr-controls select { width: auto; min-width: 150px; padding: 5px 28px 5px 9px; }
-  .scr-controls .link { color: var(--accent); font-family: var(--mono); font-size: 15px; padding: 4px 2px; }
+  .scr-bar { padding: 12px 24px 14px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .scr-controls { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--mono); font-size: 19px; color: var(--text); }
+  .scr-controls select { width: auto; min-width: 190px; padding: 7px 32px 7px 12px; font-size: 18px; }
+  .scr-controls .link { color: var(--accent); font-family: var(--mono); font-size: 19px; padding: 4px 2px; }
   .scr-controls .link:hover { text-decoration: underline; }
   .scr-controls .link:disabled { color: var(--muted); text-decoration: none; cursor: default; }
   .scr-controls .sep { color: var(--muted); }
   .scramble {
     font-family: var(--mono);
     font-weight: 500;
-    font-size: clamp(18px, 2.2vw, 38px);
+    font-size: clamp(22px, 2.7vw, 46px);
     line-height: 1.5;
     text-align: center;
     white-space: pre-line;
@@ -128,8 +128,8 @@
     padding: 8px 10px 2px;
     letter-spacing: 0.04em;
   }
-  .scramble.long { font-size: clamp(14px, 1.45vw, 24px); letter-spacing: 0.02em; }
-  .scramble.multi { text-align: left; font-size: clamp(13px, 1.25vw, 20px); line-height: 1.45; max-width: 860px; margin: 0 auto; letter-spacing: 0; }
+  .scramble.long { font-size: clamp(16px, 1.75vw, 30px); letter-spacing: 0.02em; }
+  .scramble.multi { text-align: left; font-size: clamp(15px, 1.5vw, 24px); line-height: 1.45; max-width: 1000px; margin: 0 auto; letter-spacing: 0; }
   .scramble.hidden-during-solve { visibility: hidden; }
   .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 16px 380px 16px 60px; }
   .timer {
@@ -149,7 +149,7 @@
   .penalty-bar button:hover { background: var(--card-2); }
   .penalty-bar button.primary { background: var(--accent); color: #fff; }
   .penalty-bar button.danger { color: var(--hold); }
-  .center-stats { text-align: center; font-size: clamp(28px, 3.2vw, 54px); line-height: 1.35; font-weight: 500; }
+  .center-stats { text-align: center; font-size: clamp(36px, 4.2vw, 72px); line-height: 1.35; font-weight: 600; }
   .center-stats .k { color: var(--muted); }
   .center-stats .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .center-stats .first .v { color: var(--ready); }
@@ -420,19 +420,25 @@
     return T;
   }
 
+  const FACE_SHRINK = 0.92; // leaves a small gap between neighbouring faces of the net
   function svgFromPuzzle(puz, colors, net, stroke) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const centers = net.map(T => T2.apply(T, [0, 0]));
     const paths = puz.stickers.map((s, i) => {
-      const pts = s.poly.map(p => { const q = T2.apply(net[s.f], p); return [q[0], -q[1]]; });
+      const c = centers[s.f];
+      const pts = s.poly.map(p => {
+        const q = T2.apply(net[s.f], p);
+        return [c[0] + (q[0] - c[0]) * FACE_SHRINK, -(c[1] + (q[1] - c[1]) * FACE_SHRINK)];
+      });
       for (const [x, y] of pts) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
       return `<path d="M${pts.map(p => p[0].toFixed(3) + ' ' + p[1].toFixed(3)).join('L')}Z" fill="${colors[i]}"/>`;
     });
     const pad = stroke;
-    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(minX - pad).toFixed(3)} ${(minY - pad).toFixed(3)} ${(maxX - minX + 2 * pad).toFixed(3)} ${(maxY - minY + 2 * pad).toFixed(3)}"><g stroke="#000" stroke-width="${stroke}" stroke-linejoin="round">${paths.join('')}</g></svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(minX - pad).toFixed(3)} ${(minY - pad).toFixed(3)} ${(maxX - minX + 2 * pad).toFixed(3)} ${(maxY - minY + 2 * pad).toFixed(3)}"><g stroke="#1c1c1e" stroke-width="${stroke}" stroke-linejoin="round">${paths.join('')}</g></svg>`;
   }
 
   // ---- concrete puzzles ----
-  const CUBE_COLORS = { U: '#f2f2f2', D: '#ffd500', F: '#009b48', B: '#0a5bd6', R: '#c41e3a', L: '#ff6a00' };
+  const CUBE_COLORS = { U: '#f4f4f2', D: '#f6d34a', F: '#4cbb6c', B: '#4a8df0', R: '#e5555b', L: '#f5923e' };
   const CUBE_N = { U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1], B: [0, 0, -1], R: [1, 0, 0], L: [-1, 0, 0] };
   function cubeFaces(h) {
     return Object.keys(CUBE_N).map(name => {
@@ -487,10 +493,10 @@
     const r = 2 * Math.SQRT2 / 3, s3 = Math.sqrt(3) / 2;
     const VX = { U: [0, 1, 0], L: [-r * s3, -1 / 3, r / 2], R: [r * s3, -1 / 3, r / 2], B: [0, -1 / 3, -r] };
     const faces = [
-      makeFace('F', [VX.U, VX.L, VX.R], '#009b48'),
-      makeFace('L', [VX.U, VX.B, VX.L], '#c41e3a'),
-      makeFace('R', [VX.U, VX.R, VX.B], '#0a5bd6'),
-      makeFace('D', [VX.L, VX.B, VX.R], '#ffd500'),
+      makeFace('F', [VX.U, VX.L, VX.R], '#4cbb6c'),
+      makeFace('L', [VX.U, VX.B, VX.L], '#e5555b'),
+      makeFace('R', [VX.U, VX.R, VX.B], '#4a8df0'),
+      makeFace('D', [VX.L, VX.B, VX.R], '#f6d34a'),
     ];
     const puz = buildPuzzle(faces, f => triGrid(f.local, 3));
     const net = computeNet(puz, [{ root: 'F', edgeWith: 'D', dir: 'down', children: [['F', 'L'], ['F', 'R'], ['F', 'D']] }]);
@@ -506,7 +512,7 @@
 
   function makeFTO() {
     const NAMES = { 'U': [1, 1, 1], 'F': [-1, 1, 1], 'R': [1, -1, 1], 'L': [1, 1, -1], 'D': [-1, -1, -1], 'B': [1, -1, -1], 'BR': [-1, -1, 1], 'BL': [-1, 1, -1] };
-    const COL = { U: '#f2f2f2', F: '#009b48', R: '#c41e3a', L: '#7b3fe4', D: '#ffd500', B: '#0a5bd6', BR: '#ff6a00', BL: '#9a9a9a' };
+    const COL = { U: '#f4f4f2', F: '#4cbb6c', R: '#e5555b', L: '#9b6bf0', D: '#f6d34a', B: '#4a8df0', BR: '#f5923e', BL: '#a9a9b0' };
     const faces = Object.keys(NAMES).map(name => {
       const s = NAMES[name];
       return makeFace(name, [[s[0], 0, 0], [0, s[1], 0], [0, 0, s[2]]], COL[name]);
@@ -543,7 +549,7 @@
     const right = V.norm(V.cross(up, frontRaw));
     const lN = uNeighbors.find(n => isAdj(n, fN) && V.dot(n, right) < 0);
     const named = new Map([[up, 'U'], [V.scale(up, -1), 'D'], [fN, 'F'], [lN, 'L'], [V.scale(fN, -1), 'B']]);
-    const PALETTE = ['#f2f2f2', '#009b48', '#c41e3a', '#0a5bd6', '#ffd500', '#7b3fe4', '#b9b9b9', '#a8e05f', '#ff6a00', '#ff8fc7', '#20c6c6', '#8b5a2b'];
+    const PALETTE = ['#f4f4f2', '#4cbb6c', '#e5555b', '#4a8df0', '#f6d34a', '#9b6bf0', '#a9a9b0', '#b8e068', '#f5923e', '#f48fb1', '#3ec9c9', '#c08457'];
     let idx = 0;
     const faces = nrm.map(n => {
       const dots = verts.map(v => V.dot(v, n)), mx = Math.max(...dots);
@@ -650,7 +656,7 @@
   }
 
   // ---- Square-1 ----
-  const SQ1_SIDES = ['#009b48', '#c41e3a', '#0a5bd6', '#ff6a00'];
+  const SQ1_SIDES = ['#4cbb6c', '#e5555b', '#4a8df0', '#f5923e'];
   function sq1Init() {
     // corner = two 30° slots, edge = one; the vertical cut sits between slot 11 and 0 and between 5 and 6
     const IDS = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7];
@@ -658,7 +664,7 @@
       id: id + idBase, ud,
       side: SQ1_SIDES[Math.floor(((15 + 30 * i - 30 + 360) % 360) / 90)], // cube faces span 90° starting at 30°
     }));
-    return { top: mk('#f2f2f2', 0), bot: mk('#ffd500', 100), mid: false };
+    return { top: mk('#f4f4f2', 0), bot: mk('#f6d34a', 100), mid: false };
   }
   function sq1Svg(scramble) {
     const st = sq1Init();
@@ -691,14 +697,14 @@
       }
       for (let i = 0; i < 12; i++) if (arr[i].id !== arr[(i + 11) % 12].id) {
         const [x, y] = pt(R2, 30 * i);
-        s += `<line x1="${cx}" y1="0" x2="${x}" y2="${y}" stroke="#000" stroke-width="0.06"/>`;
+        s += `<line x1="${cx}" y1="0" x2="${x}" y2="${y}" stroke="#1c1c1e" stroke-width="0.06"/>`;
       }
-      s += `<circle cx="${cx}" cy="0" r="${R}" fill="none" stroke="#000" stroke-width="0.05"/><circle cx="${cx}" cy="0" r="${R2}" fill="none" stroke="#000" stroke-width="0.06"/>`;
+      s += `<circle cx="${cx}" cy="0" r="${R}" fill="none" stroke="#1c1c1e" stroke-width="0.05"/><circle cx="${cx}" cy="0" r="${R2}" fill="none" stroke="#1c1c1e" stroke-width="0.06"/>`;
       s += `<line x1="${cx}" y1="${-R2 - 0.12}" x2="${cx}" y2="${-R2 + 0.15}" stroke="#fff" stroke-width="0.06"/><line x1="${cx}" y1="${R2 - 0.15}" x2="${cx}" y2="${R2 + 0.12}" stroke="#fff" stroke-width="0.06"/>`;
       return s;
     };
-    const midBar = `<rect x="-0.9" y="1.55" width="0.9" height="0.28" fill="${SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/><rect x="0" y="1.55" width="0.9" height="0.28" fill="${st.mid ? SQ1_SIDES[2] : SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/>`;
-    const midBarR = `<rect x="2.1" y="1.55" width="0.9" height="0.28" fill="${st.mid ? SQ1_SIDES[2] : SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/><rect x="3" y="1.55" width="0.9" height="0.28" fill="${SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/>`;
+    const midBar = `<rect x="-0.9" y="1.55" width="0.9" height="0.28" fill="${SQ1_SIDES[0]}" stroke="#1c1c1e" stroke-width="0.04"/><rect x="0" y="1.55" width="0.9" height="0.28" fill="${st.mid ? SQ1_SIDES[2] : SQ1_SIDES[0]}" stroke="#1c1c1e" stroke-width="0.04"/>`;
+    const midBarR = `<rect x="2.1" y="1.55" width="0.9" height="0.28" fill="${st.mid ? SQ1_SIDES[2] : SQ1_SIDES[0]}" stroke="#1c1c1e" stroke-width="0.04"/><rect x="3" y="1.55" width="0.9" height="0.28" fill="${SQ1_SIDES[0]}" stroke="#1c1c1e" stroke-width="0.04"/>`;
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.45 -1.45 5.9 3.4">${layer(st.top, 0, false)}${layer(st.bot, 3, true)}${midBar}${midBarR}</svg>`;
   }
 
