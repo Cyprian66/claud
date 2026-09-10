@@ -62,17 +62,17 @@
     max-width: 100%;
   }
   .pill .session {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
+    display: block;
     padding: 10px 14px;
     font-size: 17px;
     font-weight: 500;
     color: var(--text);
-    max-width: 60vw;
+    max-width: 55vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-right: 1px solid var(--card-2);
   }
-  .pill .session span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pill .session svg { flex: none; width: 24px; height: 24px; }
   .pill .event {
     position: relative;
     display: inline-flex;
@@ -344,10 +344,7 @@
 <div class="app">
   <header class="top">
     <div class="pill">
-      <button class="session" id="sessionBtn" title="Sesje">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="7" width="12" height="12" rx="2.5"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h8A2.5 2.5 0 0 1 21 5.5v8a2.5 2.5 0 0 1-2.5 2.5H17"/></svg>
-        <span id="sessionName">Default Session</span>
-      </button>
+      <button class="session" id="sessionBtn" title="Sesje">Default Session</button>
       <div class="event"><select id="eventSel" title="Konkurencja"></select></div>
     </div>
   </header>
@@ -1120,7 +1117,7 @@
   const el = {
     viewTimer: $('view-timer'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
     penaltyBar: $('penaltyBar'), cards: $('cards'), imgCard: $('imgCard'), scrImg: $('scrImg'), miniStats: $('miniStats'),
-    sessionName: $('sessionName'), eventSel: $('eventSel'),
+    sessionName: $('sessionBtn'), eventSel: $('eventSel'),
     timesMobile: $('timesMobile'), timesSide: $('timesSide'), statsFull: $('statsFull'),
     chart: $('chart'), chartLegend: $('chartLegend'), chartTip: $('chartTip'), chartWrap: $('chartWrap'),
     optInspection: $('optInspection'), inspRow: $('inspRow'), optHideTime: $('optHideTime'), optImage: $('optImage'),
