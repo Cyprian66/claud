@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cube Timer</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #181b22;
+    --panel-2: #1f232c;
+    --text: #e8eaf0;
+    --muted: #8b90a0;
+    --accent: #4f8cff;
+    --ready: #37d67a;
+    --hold: #ff5c5c;
+    --border: #2a2f3a;
+    --radius: 12px;
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "SF Mono", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    -webkit-user-select: none;
+    user-select: none;
+    overflow: hidden;
+  }
+  .app {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    height: 100vh;
+  }
+  /* --- sidebar --- */
+  .sidebar {
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .sidebar header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .sidebar h1 { font-size: 18px; margin: 0; letter-spacing: 0.5px; }
+  .stats {
+    padding: 12px 16px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .stats .label { color: var(--muted); }
+  .stats .value { font-family: var(--mono); text-align: right; }
+  .times {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+  }
+  .times table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  .times th, .times td { padding: 6px 10px; text-align: right; }
+  .times th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--panel); }
+  .times td:first-child, .times th:first-child { text-align: left; color: var(--muted); }
+  .times tr { cursor: pointer; }
+  .times tbody tr:hover { background: var(--panel-2); }
+  .times td.time { font-family: var(--mono); }
+  .times td.best { color: var(--ready); font-weight: 600; }
+  .times .empty { padding: 32px 16px; color: var(--muted); text-align: center; }
+  .sidebar footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  /* --- main --- */
+  .main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+    transition: background 0.15s;
+  }
+  .main.holding { background: #2a1519; }
+  .main.ready { background: #12291c; }
+  .main.inspecting { background: #1d1f2a; }
+  .scramble {
+    font-family: var(--mono);
+    font-size: clamp(16px, 2.2vw, 28px);
+    line-height: 1.6;
+    text-align: center;
+    max-width: 900px;
+    color: var(--text);
+    margin-bottom: 40px;
+    min-height: 2em;
+  }
+  .scramble.hidden-during-solve { visibility: hidden; }
+  .timer {
+    font-family: var(--mono);
+    font-size: clamp(64px, 14vw, 180px);
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    transition: color 0.1s;
+  }
+  .main.holding .timer { color: var(--hold); }
+  .main.ready .timer { color: var(--ready); }
+  .main.inspecting .timer { color: #ffcc66; }
+  .hint {
+    margin-top: 32px;
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+  }
+  .penalty-bar {
+    margin-top: 20px;
+    display: flex;
+    gap: 8px;
+    min-height: 36px;
+  }
+  .topbar {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  /* --- controls --- */
+  button, select {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: var(--font);
+  }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  button.danger:hover { border-color: var(--hold); color: var(--hold); }
+  button.small { padding: 4px 8px; font-size: 12px; }
+  label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
+  /* --- modal --- */
+  .modal-bg {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: min(480px, 90vw);
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  .modal h2 { margin: 0 0 12px; font-size: 18px; }
+  .modal .big { font-family: var(--mono); font-size: 40px; margin-bottom: 8px; }
+  .modal .scr { font-family: var(--mono); color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 16px; }
+  .modal .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .modal .row .spacer { flex: 1; }
+  /* --- responsive --- */
+  @media (max-width: 800px) {
+    body { overflow: auto; }
+    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: 100vh; }
+    .sidebar { order: 2; border-right: none; border-top: 1px solid var(--border); max-height: 50vh; }
+    .main { order: 1; min-height: 60vh; }
+    .topbar { position: static; margin-bottom: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <header>
+      <h1>Cube Timer</h1>
+      <select id="cubeType" title="Typ kostki">
+        <option value="333">3x3x3</option>
+        <option value="222">2x2x2</option>
+        <option value="444">4x4x4</option>
+      </select>
+    </header>
+    <div class="stats">
+      <span class="label">Liczba ułożeń</span><span class="value" id="stCount">0</span>
+      <span class="label">Najlepszy</span><span class="value" id="stBest">–</span>
+      <span class="label">Średnia (wszystkie)</span><span class="value" id="stMean">–</span>
+      <span class="label">ao5</span><span class="value" id="stAo5">–</span>
+      <span class="label">ao12</span><span class="value" id="stAo12">–</span>
+      <span class="label">ao100</span><span class="value" id="stAo100">–</span>
+      <span class="label">Najlepsze ao5</span><span class="value" id="stBestAo5">–</span>
+      <span class="label">Najlepsze ao12</span><span class="value" id="stBestAo12">–</span>
+    </div>
+    <div class="times" id="timesList"></div>
+    <footer>
+      <button id="btnExport" class="small">Eksportuj CSV</button>
+      <button id="btnClear" class="small danger">Wyczyść sesję</button>
+    </footer>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="topbar">
+      <label class="check"><input type="checkbox" id="optInspection"> Inspekcja 15s</label>
+      <label class="check"><input type="checkbox" id="optHideTime"> Ukryj czas</label>
+      <button id="btnNewScramble" class="small">Nowy scramble (N)</button>
+    </div>
+    <div class="scramble" id="scramble"></div>
+    <div class="timer" id="timer">0.00</div>
+    <div class="penalty-bar" id="penaltyBar"></div>
+    <div class="hint" id="hint">Przytrzymaj <b>spację</b> (lub dotknij ekran), aż timer zrobi się zielony, potem puść, aby wystartować.</div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2 id="mTitle">Ułożenie</h2>
+    <div class="big" id="mTime"></div>
+    <div class="scr" id="mScramble"></div>
+    <div class="row">
+      <button id="mOk">OK</button>
+      <button id="mPlus2">+2</button>
+      <button id="mDnf">DNF</button>
+      <span class="spacer"></span>
+      <button id="mDelete" class="danger">Usuń</button>
+      <button id="mClose" class="primary">Zamknij</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Scramble generation ----------
+  const MODS = ['', "'", '2'];
+  const AXES = [['U', 'D'], ['R', 'L'], ['F', 'B']];
+
+  function genNxN(length, wide) {
+    // Standard random-move scramble: no two consecutive moves on the same axis
+    // (for 3x3 / 2x2) with the same face; for 4x4 wide moves are mixed in.
+    const moves = [];
+    let lastAxis = -1, secondLastAxis = -1, lastFace = null;
+    while (moves.length < length) {
+      const axis = Math.floor(Math.random() * 3);
+      if (axis === lastAxis && axis === secondLastAxis) continue;
+      const faceIdx = Math.floor(Math.random() * 2);
+      const face = AXES[axis][faceIdx];
+      // Avoid immediately repeating the same face, and avoid e.g. R L R.
+      if (axis === lastAxis && face === lastFace) continue;
+      if (axis === lastAxis && moves.length >= 2 && moves[moves.length - 2].face === face) continue;
+      const isWide = wide && Math.random() < 0.4;
+      const mod = MODS[Math.floor(Math.random() * 3)];
+      moves.push({ face, str: face + (isWide ? 'w' : '') + mod });
+      secondLastAxis = lastAxis;
+      lastAxis = axis;
+      lastFace = face;
+    }
+    return moves.map(m => m.str).join(' ');
+  }
+
+  function gen222(length) {
+    // 2x2 only needs R, U, F.
+    const faces = ['R', 'U', 'F'];
+    const moves = [];
+    let last = null;
+    while (moves.length < length) {
+      const f = faces[Math.floor(Math.random() * 3)];
+      if (f === last) continue;
+      moves.push(f + MODS[Math.floor(Math.random() * 3)]);
+      last = f;
+    }
+    return moves.join(' ');
+  }
+
+  function generateScramble(type) {
+    switch (type) {
+      case '222': return gen222(9 + Math.floor(Math.random() * 3));
+      case '444': return genNxN(40, true);
+      default:    return genNxN(20, false);
+    }
+  }
+
+  // ---------- Formatting ----------
+  function fmt(ms, decimals = 2) {
+    if (ms == null || !isFinite(ms)) return 'DNF';
+    const total = Math.floor(ms);
+    const m = Math.floor(total / 60000);
+    const s = (total % 60000) / 1000;
+    const sStr = s.toFixed(decimals);
+    if (m > 0) return `${m}:${sStr.padStart(decimals + 3, '0')}`;
+    return sStr;
+  }
+
+  function effectiveMs(solve) {
+    if (solve.penalty === 'DNF') return Infinity;
+    if (solve.penalty === '+2') return solve.ms + 2000;
+    return solve.ms;
+  }
+
+  function fmtSolve(solve) {
+    if (solve.penalty === 'DNF') return 'DNF';
+    return fmt(effectiveMs(solve)) + (solve.penalty === '+2' ? '+' : '');
+  }
+
+  // ---------- Stats ----------
+  function average(solves) {
+    // WCA average: drop best and worst, mean of rest. >1 DNF => DNF.
+    const n = solves.length;
+    if (n < 3) return null;
+    const vals = solves.map(effectiveMs).sort((a, b) => a - b);
+    const dnfs = vals.filter(v => v === Infinity).length;
+    if (dnfs > 1) return Infinity;
+    const trim = Math.ceil(n * 0.05); // WCA trims 5% each side (1 for ao5/ao12, 5 for ao100)
+    const kept = vals.slice(trim, n - trim);
+    return kept.reduce((a, b) => a + b, 0) / kept.length;
+  }
+
+  function aoN(solves, n) {
+    if (solves.length < n) return null;
+    return average(solves.slice(-n));
+  }
+
+  function bestAoN(solves, n) {
+    if (solves.length < n) return null;
+    let best = null;
+    for (let i = 0; i + n <= solves.length; i++) {
+      const a = average(solves.slice(i, i + n));
+      if (a === null) continue;
+      if (best === null || a < best) best = a;
+    }
+    return best;
+  }
+
+  function mean(solves) {
+    const valid = solves.map(effectiveMs).filter(v => v !== Infinity);
+    if (!valid.length) return null;
+    return valid.reduce((a, b) => a + b, 0) / valid.length;
+  }
+
+  // ---------- State ----------
+  const STORAGE_KEY = 'cubeTimer.v1';
+  let state = { sessions: { '333': [], '222': [], '444': [] }, cubeType: '333', inspection: false, hideTime: false };
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        state = Object.assign(state, parsed);
+        state.sessions = Object.assign({ '333': [], '222': [], '444': [] }, parsed.sessions || {});
+      }
+    } catch (e) { /* ignore corrupt storage */ }
+  }
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota etc. */ }
+  }
+  function solves() { return state.sessions[state.cubeType]; }
+
+  // ---------- DOM ----------
+  const $ = id => document.getElementById(id);
+  const el = {
+    main: $('main'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
+    penaltyBar: $('penaltyBar'), timesList: $('timesList'), cubeType: $('cubeType'),
+    optInspection: $('optInspection'), optHideTime: $('optHideTime'),
+    stCount: $('stCount'), stBest: $('stBest'), stMean: $('stMean'),
+    stAo5: $('stAo5'), stAo12: $('stAo12'), stAo100: $('stAo100'),
+    stBestAo5: $('stBestAo5'), stBestAo12: $('stBestAo12'),
+    modalBg: $('modalBg'), mTitle: $('mTitle'), mTime: $('mTime'), mScramble: $('mScramble'),
+  };
+
+  // ---------- Timer machine ----------
+  // States: idle -> holding -> ready -> running -> idle
+  //         idle -> (inspection) inspecting -> holding -> ready -> running
+  const HOLD_MS = 500;
+  const INSPECTION_MS = 15000;
+
+  let phase = 'idle';
+  let holdTimer = null;
+  let startTime = 0;
+  let rafId = null;
+  let inspectionStart = 0;
+  let inspectionPenalty = null; // null | '+2' | 'DNF'
+  let currentScramble = '';
+  let lastSolveId = null;
+
+  function setPhase(p) {
+    phase = p;
+    el.main.classList.toggle('holding', p === 'holding');
+    el.main.classList.toggle('ready', p === 'ready');
+    el.main.classList.toggle('inspecting', p === 'inspecting' || p === 'inspHolding' || p === 'inspReady');
+    if (p === 'inspHolding') el.main.classList.add('holding');
+    if (p === 'inspReady') el.main.classList.add('ready');
+    el.scramble.classList.toggle('hidden-during-solve', p === 'running');
+    if (p === 'running') {
+      el.hint.textContent = 'Naciśnij dowolny klawisz, aby zatrzymać.';
+      el.penaltyBar.innerHTML = '';
+    } else if (p === 'inspecting') {
+      el.hint.textContent = 'Inspekcja. Przytrzymaj spację, aby wystartować.';
+    } else if (p === 'idle') {
+      el.hint.innerHTML = 'Przytrzymaj <b>spację</b> (lub dotknij ekran), aż timer zrobi się zielony, potem puść, aby wystartować.';
+    }
+  }
+
+  function newScramble() {
+    currentScramble = generateScramble(state.cubeType);
+    el.scramble.textContent = currentScramble;
+  }
+
+  function tick() {
+    if (phase === 'running') {
+      const elapsed = performance.now() - startTime;
+      el.timer.textContent = state.hideTime ? '···' : fmt(elapsed, 1);
+      rafId = requestAnimationFrame(tick);
+    } else if (phase === 'inspecting' || phase === 'inspHolding' || phase === 'inspReady') {
+      const elapsed = performance.now() - inspectionStart;
+      const left = INSPECTION_MS - elapsed;
+      if (left > -2000) {
+        el.timer.textContent = left > 0 ? Math.ceil(left / 1000) : '+2';
+        inspectionPenalty = left > 0 ? null : '+2';
+      } else {
+        el.timer.textContent = 'DNF';
+        inspectionPenalty = 'DNF';
+      }
+      rafId = requestAnimationFrame(tick);
+    }
+  }
+
+  function startInspection() {
+    inspectionStart = performance.now();
+    inspectionPenalty = null;
+    setPhase('inspecting');
+    cancelAnimationFrame(rafId);
+    tick();
+  }
+
+  function startRunning() {
+    startTime = performance.now();
+    setPhase('running');
+    cancelAnimationFrame(rafId);
+    tick();
+  }
+
+  function stopRunning() {
+    const endTime = performance.now();
+    cancelAnimationFrame(rafId);
+    const ms = endTime - startTime;
+    const solve = {
+      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+      ms: Math.round(ms),
+      penalty: inspectionPenalty,
+      scramble: currentScramble,
+      date: new Date().toISOString(),
+    };
+    solves().push(solve);
+    lastSolveId = solve.id;
+    save();
+    setPhase('idle');
+    el.timer.textContent = fmtSolve(solve);
+    renderPenaltyBar(solve);
+    render();
+    newScramble();
+  }
+
+  function renderPenaltyBar(solve) {
+    el.penaltyBar.innerHTML = '';
+    const mk = (label, pen, cls) => {
+      const b = document.createElement('button');
+      b.className = 'small' + (cls ? ' ' + cls : '');
+      b.textContent = label;
+      if (solve.penalty === pen) b.classList.add('primary');
+      b.addEventListener('click', e => { e.stopPropagation(); setPenalty(solve.id, pen); });
+      return b;
+    };
+    el.penaltyBar.append(mk('OK', null), mk('+2', '+2'), mk('DNF', 'DNF'));
+    const del = document.createElement('button');
+    del.className = 'small danger';
+    del.textContent = 'Usuń';
+    del.addEventListener('click', e => { e.stopPropagation(); deleteSolve(solve.id); });
+    el.penaltyBar.append(del);
+  }
+
+  function setPenalty(id, pen) {
+    const s = solves().find(x => x.id === id);
+    if (!s) return;
+    s.penalty = pen;
+    save();
+    if (id === lastSolveId && phase === 'idle') {
+      el.timer.textContent = fmtSolve(s);
+      renderPenaltyBar(s);
+    }
+    render();
+  }
+
+  function deleteSolve(id) {
+    const list = solves();
+    const idx = list.findIndex(x => x.id === id);
+    if (idx < 0) return;
+    list.splice(idx, 1);
+    save();
+    if (id === lastSolveId) {
+      lastSolveId = null;
+      el.timer.textContent = '0.00';
+      el.penaltyBar.innerHTML = '';
+    }
+    closeModal();
+    render();
+  }
+
+  // ---------- Input handling ----------
+  // press(): user pressed spacebar / touched screen. release(): let go.
+  function press() {
+    if (el.modalBg.classList.contains('open')) return;
+    if (phase === 'running') { stopRunning(); return; }
+    if (phase === 'idle') {
+      if (state.inspection) { startInspection(); return; }
+      beginHold('holding', 'ready');
+    } else if (phase === 'inspecting') {
+      beginHold('inspHolding', 'inspReady');
+    }
+  }
+
+  function beginHold(holdPhase, readyPhase) {
+    setPhase(holdPhase);
+    if (holdPhase === 'holding') el.timer.textContent = '0.00';
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(() => { if (phase === holdPhase) setPhase(readyPhase); }, HOLD_MS);
+  }
+
+  function release() {
+    clearTimeout(holdTimer);
+    if (phase === 'ready' || phase === 'inspReady') {
+      startRunning();
+    } else if (phase === 'holding') {
+      setPhase('idle');
+      if (lastSolveId) {
+        const s = solves().find(x => x.id === lastSolveId);
+        if (s) { el.timer.textContent = fmtSolve(s); }
+      }
+    } else if (phase === 'inspHolding') {
+      setPhase('inspecting');
+    }
+  }
+
+  let spaceDown = false;
+  document.addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+    if (phase === 'running') { e.preventDefault(); stopRunning(); return; }
+    if (e.code === 'Space') { e.preventDefault(); spaceDown = true; press(); }
+    else if (e.code === 'Escape') {
+      if (el.modalBg.classList.contains('open')) closeModal();
+      else if (phase.startsWith('insp')) { cancelAnimationFrame(rafId); setPhase('idle'); el.timer.textContent = '0.00'; }
+    }
+    else if (e.key === 'n' || e.key === 'N') newScramble();
+  });
+  document.addEventListener('keyup', e => {
+    if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); }
+  });
+
+  // Touch / mouse on the main area (mobile support).
+  let pointerDown = false;
+  el.main.addEventListener('pointerdown', e => {
+    if (e.target.closest('button, select, label, input, .topbar')) return;
+    e.preventDefault();
+    pointerDown = true;
+    press();
+  });
+  const pointerUp = () => { if (pointerDown) { pointerDown = false; release(); } };
+  el.main.addEventListener('pointerup', pointerUp);
+  el.main.addEventListener('pointercancel', pointerUp);
+  el.main.addEventListener('pointerleave', pointerUp);
+
+  // ---------- Rendering ----------
+  function render() {
+    const list = solves();
+    const n = list.length;
+    el.stCount.textContent = n;
+    const valid = list.filter(s => s.penalty !== 'DNF');
+    const best = valid.length ? valid.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b) : null;
+    el.stBest.textContent = best ? fmtSolve(best) : '–';
+    const mn = mean(list);
+    el.stMean.textContent = mn == null ? '–' : fmt(mn);
+    const a5 = aoN(list, 5), a12 = aoN(list, 12), a100 = aoN(list, 100);
+    el.stAo5.textContent = a5 == null ? '–' : fmt(a5);
+    el.stAo12.textContent = a12 == null ? '–' : fmt(a12);
+    el.stAo100.textContent = a100 == null ? '–' : fmt(a100);
+    const b5 = bestAoN(list, 5), b12 = bestAoN(list, 12);
+    el.stBestAo5.textContent = b5 == null ? '–' : fmt(b5);
+    el.stBestAo12.textContent = b12 == null ? '–' : fmt(b12);
+
+    if (!n) {
+      el.timesList.innerHTML = '<div class="empty">Brak ułożeń w tej sesji.<br>Zacznij układać!</div>';
+      return;
+    }
+    const rows = [];
+    for (let i = n - 1; i >= 0; i--) {
+      const s = list[i];
+      const a5i = i >= 4 ? average(list.slice(i - 4, i + 1)) : null;
+      const a12i = i >= 11 ? average(list.slice(i - 11, i + 1)) : null;
+      const isBest = best && s.id === best.id;
+      rows.push(`<tr data-id="${s.id}">
+        <td>${i + 1}</td>
+        <td class="time${isBest ? ' best' : ''}">${fmtSolve(s)}</td>
+        <td class="time">${a5i == null ? '' : fmt(a5i)}</td>
+        <td class="time">${a12i == null ? '' : fmt(a12i)}</td>
+      </tr>`);
+    }
+    el.timesList.innerHTML = `<table>
+      <thead><tr><th>#</th><th>czas</th><th>ao5</th><th>ao12</th></tr></thead>
+      <tbody>${rows.join('')}</tbody></table>`;
+  }
+
+  el.timesList.addEventListener('click', e => {
+    const tr = e.target.closest('tr[data-id]');
+    if (tr) openModal(tr.dataset.id);
+  });
+
+  // ---------- Modal ----------
+  let modalId = null;
+  function openModal(id) {
+    const s = solves().find(x => x.id === id);
+    if (!s) return;
+    modalId = id;
+    const idx = solves().indexOf(s) + 1;
+    el.mTitle.textContent = `Ułożenie #${idx} · ${new Date(s.date).toLocaleString('pl-PL')}`;
+    el.mTime.textContent = fmtSolve(s);
+    el.mScramble.textContent = s.scramble;
+    el.modalBg.classList.add('open');
+  }
+  function closeModal() { el.modalBg.classList.remove('open'); modalId = null; }
+  $('mOk').addEventListener('click', () => { setPenalty(modalId, null); openModal(modalId); });
+  $('mPlus2').addEventListener('click', () => { setPenalty(modalId, '+2'); openModal(modalId); });
+  $('mDnf').addEventListener('click', () => { setPenalty(modalId, 'DNF'); openModal(modalId); });
+  $('mDelete').addEventListener('click', () => { if (confirm('Usunąć to ułożenie?')) deleteSolve(modalId); });
+  $('mClose').addEventListener('click', closeModal);
+  el.modalBg.addEventListener('click', e => { if (e.target === el.modalBg) closeModal(); });
+
+  // ---------- Controls ----------
+  el.cubeType.addEventListener('change', () => {
+    state.cubeType = el.cubeType.value;
+    lastSolveId = null;
+    el.timer.textContent = '0.00';
+    el.penaltyBar.innerHTML = '';
+    save(); render(); newScramble();
+    el.cubeType.blur();
+  });
+  el.optInspection.addEventListener('change', () => { state.inspection = el.optInspection.checked; save(); el.optInspection.blur(); });
+  el.optHideTime.addEventListener('change', () => { state.hideTime = el.optHideTime.checked; save(); el.optHideTime.blur(); });
+  $('btnNewScramble').addEventListener('click', e => { newScramble(); e.target.blur(); });
+  $('btnClear').addEventListener('click', () => {
+    if (!solves().length) return;
+    if (confirm('Wyczyścić wszystkie czasy w tej sesji?')) {
+      state.sessions[state.cubeType] = [];
+      lastSolveId = null;
+      el.timer.textContent = '0.00';
+      el.penaltyBar.innerHTML = '';
+      save(); render();
+    }
+  });
+  $('btnExport').addEventListener('click', () => {
+    const list = solves();
+    if (!list.length) return;
+    const esc = v => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = ['nr,czas_ms,kara,wynik,scramble,data'];
+    list.forEach((s, i) => lines.push([i + 1, s.ms, s.penalty || '', fmtSolve(s), esc(s.scramble), s.date].join(',')));
+    const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `cube-timer-${state.cubeType}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // ---------- Init ----------
+  load();
+  el.cubeType.value = state.cubeType;
+  el.optInspection.checked = !!state.inspection;
+  el.optHideTime.checked = !!state.hideTime;
+  render();
+  newScramble();
+  setPhase('idle');
+})();
+</script>
+</body>
+</html>
