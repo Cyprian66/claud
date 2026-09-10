@@ -7,9 +7,11 @@ Wystarczy otworzyć `index.html` w przeglądarce, na komputerze lub telefonie.
 
 Rozmieszczenie jak w csTimerze, ciemny motyw:
 
-- **Lewy panel**: u góry ikony narzędzi (ustawienia, statystyki z wykresem, eksport CSV, wyczyść sesję), wiersz „Sesja” z listą sesji i przyciskami nowa / zmień nazwę / usuń, tabela **obecny / najlepszy** (czas, ao5, ao12, ao100 albo mo3), podsumowanie „Ułożenie: udane/wszystkie, średnia” i lista czasów (najlepszy na zielono, najgorszy na czerwono).
-- **Góra**: wybór konkurencji, linki „ostatni / następny scramble” (klawisze `P` / `N`) i duży scramble.
-- **Środek**: zegar w dużej ramce, pod nim przyciski OK / +2 / DNF / Usuń i linie **ao5 / ao12** (lub mo3 / ao5).
+Interfejs aplikacji jest po angielsku.
+
+- **Lewy panel**: u góry ikony narzędzi (Settings, Statistics z wykresem, Export CSV, Clear), wiersz „Session” z listą sesji i przyciskami nowa / zmień nazwę / usuń, tabela **current / best** (time, ao5, ao12, ao100 albo mo3), podsumowanie „Solves: udane/wszystkie, mean” i lista czasów (najlepszy na zielono, najgorszy na czerwono).
+- **Góra**: wybór konkurencji, linki „last / next scramble” (klawisze `P` / `N`) i duży scramble.
+- **Środek**: duży zegar, pod nim przyciski OK / +2 / DNF / Delete i linie **ao5 / ao12** (mo3 / ao5 dla konkurencji na średnią z 3).
 - **Prawy dolny róg**: panel z obrazkiem scramble (kliknięcie powiększa). Obrazek i linie ao5 / ao12 można ukryć w ustawieniach.
 
 Zmiana konkurencji nie zmienia sesji: sesja zapamiętuje wybraną konkurencję, a czasy zostają na miejscu. Wszystkie okna dialogowe są własne, więc działają także w piaskownicy (np. w opublikowanym artefakcie), gdzie systemowe `prompt`/`confirm` są blokowane.

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -64,7 +64,7 @@
   .icon-btn.big { width: 40px; height: 40px; } .icon-btn.big svg { width: 22px; height: 22px; }
 
   /* ---------- layout ---------- */
-  .app { height: 100%; min-width: 1000px; display: grid; grid-template-columns: 300px 1fr; }
+  .app { height: 100%; min-width: 1000px; display: grid; grid-template-columns: 330px 1fr; }
   .sidebar {
     background: var(--panel);
     border-right: 1px solid var(--border);
@@ -72,31 +72,31 @@
   }
   .sb-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px 10px 8px; border-bottom: 1px solid var(--border); }
   .sb-tools button {
-    height: 46px; border-radius: 10px; background: var(--card); color: var(--text);
+    height: 50px; border-radius: 10px; background: var(--card); color: var(--text);
     display: flex; align-items: center; justify-content: center;
   }
   .sb-tools button:hover { background: var(--card-2); }
   .sb-tools button.danger { color: var(--hold); }
-  .sb-tools button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .sb-tools button svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
   .sb-session { display: flex; align-items: center; gap: 4px; padding: 10px 10px 8px; }
-  .sb-session .lbl { color: var(--accent); font-weight: 600; font-size: 15px; flex: none; margin-right: 4px; }
-  .sb-session select { flex: 1; min-width: 0; padding: 6px 28px 6px 8px; }
+  .sb-session .lbl { color: var(--accent); font-weight: 600; font-size: 17px; flex: none; margin-right: 4px; }
+  .sb-session select { flex: 1; min-width: 0; padding: 7px 28px 7px 9px; font-size: 16px; }
   .sb-session .icon-btn { width: 26px; height: 26px; border-radius: 7px; }
   .sb-session .icon-btn svg { width: 15px; height: 15px; }
-  table.sb-stats { width: calc(100% - 20px); margin: 0 10px; border-collapse: collapse; font-size: 15px; }
-  table.sb-stats th { color: var(--text); font-weight: 600; text-align: right; padding: 3px 8px; }
+  table.sb-stats { width: calc(100% - 20px); margin: 0 10px; border-collapse: collapse; font-size: 18px; }
+  table.sb-stats th { color: var(--text); font-weight: 600; text-align: right; padding: 4px 8px; font-size: 17px; }
   table.sb-stats th:first-child { text-align: left; }
-  table.sb-stats td { padding: 4px 8px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ready); }
+  table.sb-stats td { padding: 5px 8px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ready); }
   table.sb-stats td:first-child { text-align: left; font-family: var(--font); color: var(--text); font-weight: 600; }
   table.sb-stats td.dnf { color: var(--hold); }
   table.sb-stats td.none { color: var(--muted); }
-  .sb-summary { text-align: center; padding: 8px 10px 10px; margin: 6px 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-weight: 600; font-size: 15px; line-height: 1.6; }
+  .sb-summary { text-align: center; padding: 8px 10px 10px; margin: 6px 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-weight: 600; font-size: 18px; line-height: 1.6; }
   .sb-summary .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 10px 10px; }
-  .times table { width: 100%; border-collapse: collapse; font-size: 15px; }
-  .times th, .times td { padding: 6px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  .times table { width: 100%; border-collapse: collapse; font-size: 18px; }
+  .times th, .times td { padding: 8px 6px; text-align: center; border-bottom: 1px solid var(--border); }
   .times th { color: var(--accent); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
-  .times td:first-child, .times th:first-child { color: var(--muted); width: 32px; }
+  .times td:first-child, .times th:first-child { color: var(--muted); width: 38px; }
   .times tr { cursor: pointer; }
   .times tbody tr:hover { background: var(--card); }
   .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -131,20 +131,11 @@
   .scramble.long { font-size: clamp(14px, 1.45vw, 24px); letter-spacing: 0.02em; }
   .scramble.multi { text-align: left; font-size: clamp(13px, 1.25vw, 20px); line-height: 1.45; max-width: 860px; margin: 0 auto; letter-spacing: 0; }
   .scramble.hidden-during-solve { visibility: hidden; }
-  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px 380px 16px 60px; }
-  .timer-box {
-    width: min(1100px, 100%);
-    min-height: clamp(170px, 27vh, 300px);
-    background: var(--card);
-    border: 1px solid #3a3a3d;
-    border-radius: 8px;
-    display: flex; align-items: center; justify-content: center;
-    padding: 16px 24px;
-  }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 16px 380px 16px 60px; }
   .timer {
     font-family: var(--mono);
     font-weight: 600;
-    font-size: clamp(80px, 11vw, 200px);
+    font-size: clamp(90px, 13vw, 240px);
     line-height: 1;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -163,7 +154,6 @@
   .center-stats .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .center-stats .first .v { color: var(--ready); }
   .center-stats .dnf { color: var(--hold); }
-  .hint { color: var(--muted); font-size: 13px; text-align: center; max-width: 560px; }
 
   .panel { background: var(--card); border-radius: var(--radius); }
   .panel.image {
@@ -227,17 +217,17 @@
 <div class="app" id="app">
   <aside class="sidebar">
     <div class="sb-tools">
-      <button id="btnSettings" title="Ustawienia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-      <button id="btnStats" title="Statystyki i wykres"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M7 15l4-5 3 3 5-7"/></svg></button>
-      <button id="btnExport" title="Eksportuj CSV"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></button>
-      <button id="btnClear" class="danger" title="Wyczyść czasy w sesji"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
+      <button id="btnSettings" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button id="btnStats" title="Statistics"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M7 15l4-5 3 3 5-7"/></svg></button>
+      <button id="btnExport" title="Export CSV"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></button>
+      <button id="btnClear" class="danger" title="Clear session times"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
     </div>
     <div class="sb-session">
-      <span class="lbl">Sesja</span>
-      <select class="field" id="sessionSel" title="Sesja"></select>
-      <button class="icon-btn" id="btnNewSession" title="Nowa sesja"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-      <button class="icon-btn" id="btnRename" title="Zmień nazwę sesji"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
-      <button class="icon-btn" id="btnDeleteSession" title="Usuń sesję"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      <span class="lbl">Session</span>
+      <select class="field" id="sessionSel" title="Session"></select>
+      <button class="icon-btn" id="btnNewSession" title="New session"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="icon-btn" id="btnRename" title="Rename session"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
+      <button class="icon-btn" id="btnDeleteSession" title="Delete session"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <table class="sb-stats" id="sbStats"></table>
     <div class="sb-summary" id="sbSummary"></div>
@@ -247,18 +237,17 @@
   <main class="main" id="main">
     <div class="scr-bar">
       <div class="scr-controls">
-        <select class="field" id="eventSel" title="Konkurencja"></select>
-        <button class="link" id="btnPrevScr" title="Poprzedni scramble (P)">ostatni</button><span class="sep">/</span><button class="link" id="btnNextScr" title="Następny scramble (N)">następny</button><span>scramble</span>
+        <select class="field" id="eventSel" title="Event"></select>
+        <button class="link" id="btnPrevScr" title="Previous scramble (P)">last</button><span class="sep">/</span><button class="link" id="btnNextScr" title="Next scramble (N)">next</button><span>scramble</span>
       </div>
       <div class="scramble" id="scramble"></div>
     </div>
     <div class="stage" id="stage">
-      <div class="timer-box" id="timerBox"><div class="timer" id="timer">0.00</div></div>
+      <div class="timer" id="timer">0.00</div>
       <div class="penalty-bar" id="penaltyBar"></div>
       <div class="center-stats" id="centerStats"></div>
-      <div class="hint" id="hint"></div>
     </div>
-    <div class="panel image" id="imgCard" title="Powiększ"><div id="scrImg"></div></div>
+    <div class="panel image" id="imgCard" title="Enlarge"><div id="scrImg"></div></div>
   </main>
 </div>
 
@@ -846,18 +835,18 @@
     '555':   { name: '5x5x5',                group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(5, 60) },
     '666':   { name: '6x6x6',                group: 'wca', fmt: 'mo3', insp: true,  scr: () => genNxN(6, 80) },
     '777':   { name: '7x7x7',                group: 'wca', fmt: 'mo3', insp: true,  scr: () => genNxN(7, 100) },
-    '333bf': { name: '3x3x3 bez patrzenia',  group: 'wca', fmt: 'mo3', insp: false, scr: gen333bf },
-    '333oh': { name: '3x3x3 jedną ręką',     group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(3, 20) },
+    '333bf': { name: '3x3x3 Blindfolded',  group: 'wca', fmt: 'mo3', insp: false, scr: gen333bf },
+    '333oh': { name: '3x3x3 One-Handed',     group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(3, 20) },
     'clock': { name: 'Clock',                group: 'wca', fmt: 'ao',  insp: true,  scr: genClock },
     'minx':  { name: 'Megaminx',             group: 'wca', fmt: 'ao',  insp: true,  scr: genMinx },
     'pyram': { name: 'Pyraminx',             group: 'wca', fmt: 'ao',  insp: true,  scr: genPyram },
     'skewb': { name: 'Skewb',                group: 'wca', fmt: 'ao',  insp: true,  scr: genSkewb },
     'sq1':   { name: 'Square-1',             group: 'wca', fmt: 'ao',  insp: true,  scr: () => genSq1(12 + rnd(3)) },
-    '444bf': { name: '4x4x4 bez patrzenia',  group: 'wca', fmt: 'mo3', insp: false, scr: gen444bf },
-    '555bf': { name: '5x5x5 bez patrzenia',  group: 'wca', fmt: 'mo3', insp: false, scr: gen555bf },
+    '444bf': { name: '4x4x4 Blindfolded',  group: 'wca', fmt: 'mo3', insp: false, scr: gen444bf },
+    '555bf': { name: '5x5x5 Blindfolded',  group: 'wca', fmt: 'mo3', insp: false, scr: gen555bf },
     'fto':   { name: 'FTO',                  group: 'other', fmt: 'ao', insp: true, scr: () => genFTO(30) },
   };
-  const GROUPS = { wca: 'Oficjalne konkurencje WCA', other: 'Nieoficjalne' };
+  const GROUPS = { wca: 'Official WCA events', other: 'Unofficial' };
 
   // =====================================================================
   //  State: named sessions, each with its own event and solves
@@ -886,7 +875,7 @@
     } catch (e) { /* ignore corrupt storage */ }
     if (!Array.isArray(state.sessions)) state.sessions = [];
     state.sessions = state.sessions.filter(s => s && EVENTS[s.event] && Array.isArray(s.solves));
-    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Sesja 1', event: '333', solves: [] });
+    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Session 1', event: '333', solves: [] });
     if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
     delete state.precision;
     if (typeof state.showImage !== 'boolean') state.showImage = true;
@@ -955,7 +944,7 @@
   // =====================================================================
   const $ = id => document.getElementById(id);
   const el = {
-    app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
+    app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'),
     penaltyBar: $('penaltyBar'), imgCard: $('imgCard'), scrImg: $('scrImg'), centerStats: $('centerStats'),
     sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), sbSummary: $('sbSummary'), timesList: $('timesList'),
     btnPrevScr: $('btnPrevScr'), modalBg: $('modalBg'), dialog: $('dialog'),
@@ -994,7 +983,7 @@
       dialogResolve = resolve;
       openDialog(`<h2>${esc(o.title)}</h2>${o.message ? `<p>${esc(o.message)}</p>` : ''}
         ${o.input ? `<input class="field" id="dlgInput" type="text" maxlength="40" value="${esc(o.value || '')}" placeholder="${esc(o.input)}">` : ''}
-        <div class="actions"><button id="dlgCancel">Anuluj</button><button id="dlgOk" class="primary${o.danger ? ' danger' : ''}">${esc(o.ok || 'OK')}</button></div>`);
+        <div class="actions"><button id="dlgCancel">Cancel</button><button id="dlgOk" class="primary${o.danger ? ' danger' : ''}">${esc(o.ok || 'OK')}</button></div>`);
       const input = $('dlgInput');
       const ok = () => closeDialog(input ? input.value.trim() : true);
       $('dlgOk').addEventListener('click', ok);
@@ -1041,10 +1030,6 @@
   const HOLD_MS = 500, INSPECTION_MS = 15000;
   let phase = 'idle', holdTimer = null, startTime = 0, rafId = null, inspectionStart = 0, inspectionPenalty = null, lastSolveId = null;
   const zero = () => fmt(0);
-  function idleHint() {
-    if (!event().insp) return 'Bez inspekcji: zapamiętywanie liczy się do czasu. Przytrzymaj spację, aż timer zrobi się zielony, potem puść.';
-    return 'Przytrzymaj spację (lub kliknij i trzymaj), aż timer zrobi się zielony, potem puść, aby wystartować.';
-  }
   function setPhase(p) {
     phase = p;
     el.main.classList.toggle('holding', p === 'holding' || p === 'inspHolding');
@@ -1053,9 +1038,7 @@
     el.scramble.classList.toggle('hidden-during-solve', p === 'running');
     el.imgCard.style.visibility = p === 'running' ? 'hidden' : '';
     el.centerStats.style.visibility = p === 'running' ? 'hidden' : '';
-    if (p === 'running') { el.hint.textContent = 'Naciśnij dowolny klawisz lub kliknij, aby zatrzymać.'; el.penaltyBar.innerHTML = ''; }
-    else if (p === 'inspecting') el.hint.textContent = 'Inspekcja. Przytrzymaj spację, aby wystartować.';
-    else if (p === 'idle') el.hint.textContent = idleHint();
+    if (p === 'running') el.penaltyBar.innerHTML = '';
   }
   function tick() {
     if (phase === 'running') {
@@ -1098,7 +1081,7 @@
     el.penaltyBar.innerHTML = '';
     el.penaltyBar.append(penaltyButtons(solve, () => { const s = solves().find(x => x.id === solve.id); if (s) renderPenaltyBar(s); }));
     const del = document.createElement('button');
-    del.className = 'danger'; del.textContent = 'Usuń';
+    del.className = 'danger'; del.textContent = 'Delete';
     del.addEventListener('click', e => { e.stopPropagation(); deleteSolve(solve.id); });
     el.penaltyBar.append(del);
   }
@@ -1181,17 +1164,17 @@
 
     const cur = (n, f) => dash(lastN(list, n, f)), bst = (n, f) => dash(bestN(list, n, f));
     const td = v => `<td class="${v === 'DNF' ? 'dnf' : v === '–' ? 'none' : ''}">${v}</td>`;
-    const trs = [`<tr><td>czas</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–')}${td(best ? fmtSolve(best) : '–')}</tr>`];
+    const trs = [`<tr><td>time</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–')}${td(best ? fmtSolve(best) : '–')}</tr>`];
     if (ev.fmt === 'mo3') trs.push(`<tr><td>mo3</td>${td(cur(3, meanOf))}${td(bst(3, meanOf))}</tr>`);
     trs.push(`<tr><td>ao5</td>${td(cur(5, average))}${td(bst(5, average))}</tr>`, `<tr><td>ao12</td>${td(cur(12, average))}${td(bst(12, average))}</tr>`);
     if (ev.fmt === 'ao') trs.push(`<tr><td>ao100</td>${td(cur(100, average))}${td(bst(100, average))}</tr>`);
-    el.sbStats.innerHTML = `<thead><tr><th></th><th>obecny</th><th>najlepszy</th></tr></thead><tbody>${trs.join('')}</tbody>`;
+    el.sbStats.innerHTML = `<thead><tr><th></th><th>current</th><th>best</th></tr></thead><tbody>${trs.join('')}</tbody>`;
     const solved = list.filter(s => s.penalty !== 'DNF').length;
-    el.sbSummary.innerHTML = `Ułożenie: <span class="mono">${solved}/${list.length}</span><br>średnia: <span class="mono">${dash(mean(list))}</span>`;
+    el.sbSummary.innerHTML = `Solves: <span class="mono">${solved}/${list.length}</span><br>mean: <span class="mono">${dash(mean(list))}</span>`;
     const line = (k, v, first) => `<div class="${first ? 'first' : ''}"><span class="k">${k}: </span><span class="v${v === 'DNF' ? ' dnf' : ''}">${v}</span></div>`;
     el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
 
-    if (!list.length) el.timesList.innerHTML = '<div class="empty">Brak ułożeń w tej sesji.<br>Przytrzymaj spację, aby zacząć.</div>';
+    if (!list.length) el.timesList.innerHTML = '<div class="empty">No solves in this session yet.<br>Hold space to start.</div>';
     else {
       const rows = [];
       for (let i = list.length - 1; i >= 0; i--) {
@@ -1207,7 +1190,7 @@
         const cls = best && s.id === best.id ? ' best' : (s.penalty === 'DNF' || (worst && s.id === worst.id && list.length > 1)) ? ' worst' : '';
         rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${cls}">${fmtSolve(s)}</td>${extra}</tr>`);
       }
-      const head = ev.fmt === 'ao' ? '<th>czas</th><th>ao5</th><th>ao12</th>' : '<th>czas</th><th>mo3</th><th>ao5</th>';
+      const head = ev.fmt === 'ao' ? '<th>time</th><th>ao5</th><th>ao12</th>' : '<th>time</th><th>mo3</th><th>ao5</th>';
       el.timesList.innerHTML = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
   }
@@ -1218,7 +1201,7 @@
     const s = solves().find(x => x.id === id);
     if (!s) return;
     const idx = solves().indexOf(s) + 1;
-    openDialog(`<h2>Ułożenie #${idx} <span style="color:var(--muted);font-weight:400;font-size:14px">· ${new Date(s.date).toLocaleString('pl-PL')}</span></h2>
+    openDialog(`<h2>Solve #${idx} <span style="color:var(--muted);font-weight:400;font-size:14px">· ${new Date(s.date).toLocaleString('en-GB')}</span></h2>
       <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
       <div class="scr">${esc(s.scramble)}</div>
       <div class="preview">${state.showImage ? scrambleSvg(session().event, s.scramble) : ''}</div>
@@ -1226,16 +1209,16 @@
     const actions = $('solveActions');
     actions.append(penaltyButtons(s, () => openSolve(id)));
     const spacer = document.createElement('span'); spacer.className = 'spacer';
-    const del = document.createElement('button'); del.className = 'danger'; del.textContent = 'Usuń';
-    del.addEventListener('click', async () => { closeDialog(); if (await ask({ title: 'Usunąć to ułożenie?', ok: 'Usuń', danger: true })) deleteSolve(id); });
-    const close = document.createElement('button'); close.className = 'primary'; close.textContent = 'Zamknij';
+    const del = document.createElement('button'); del.className = 'danger'; del.textContent = 'Delete';
+    del.addEventListener('click', async () => { closeDialog(); if (await ask({ title: 'Delete this solve?', ok: 'Delete', danger: true })) deleteSolve(id); });
+    const close = document.createElement('button'); close.className = 'primary'; close.textContent = 'Close';
     close.addEventListener('click', () => closeDialog());
     actions.append(spacer, del, close);
   }
   el.imgCard.addEventListener('click', () => {
     if (!currentScramble) return;
     openDialog(`<h2>${esc(event().name)}</h2><div class="scr">${esc(currentScramble)}</div><div class="zoom">${scrambleSvg(session().event, currentScramble)}</div>
-      <div class="actions"><button class="primary" id="dlgClose">Zamknij</button></div>`, 'wide');
+      <div class="actions"><button class="primary" id="dlgClose">Close</button></div>`, 'wide');
     $('dlgClose').addEventListener('click', () => closeDialog());
   });
 
@@ -1246,16 +1229,16 @@
   function openStats() {
     const list = solves(), ev = event(), best = bestSolve(list), worst = worstSolve(list);
     const dnfs = list.filter(s => s.penalty === 'DNF').length;
-    const rows = [statRow('Liczba ułożeń', list.length, dnfs ? `${dnfs} DNF` : ''), statRow('Najlepszy', best ? fmtSolve(best) : '–'), statRow('Najgorszy', worst ? fmtSolve(worst) : '–'), statRow('Średnia (wszystkie)', dash(mean(list)))];
-    if (ev.fmt === 'mo3') rows.push(statRow('mo3', dash(lastN(list, 3, meanOf)), 'aktualne'), statRow('Najlepsze mo3', dash(bestN(list, 3, meanOf))));
-    rows.push(statRow('ao5', dash(lastN(list, 5, average)), 'aktualne'), statRow('Najlepsze ao5', dash(bestN(list, 5, average))),
-      statRow('ao12', dash(lastN(list, 12, average)), 'aktualne'), statRow('Najlepsze ao12', dash(bestN(list, 12, average))),
-      statRow('ao100', dash(lastN(list, 100, average)), 'aktualne'), statRow('Najlepsze ao100', dash(bestN(list, 100, average))));
-    openDialog(`<h2>Statystyki · ${esc(session().name)} · ${esc(ev.name)}</h2>
-      <div class="chart-wrap" id="chartWrap"><svg id="chart" viewBox="0 0 ${CH.w} ${CH.h}" preserveAspectRatio="none" role="img" aria-label="Wykres czasów w sesji"></svg>
-      <div class="chart-legend"><span><i style="background:#4f8cff"></i>czas</span><span><i style="background:#c97a1c"></i>ao12</span></div><div class="chart-tip" id="chartTip"></div></div>
-      <div class="section-title">Statystyki</div><div class="group">${rows.join('')}</div>
-      <div class="actions"><button class="primary" id="dlgClose">Zamknij</button></div>`, 'wide');
+    const rows = [statRow('Solves', list.length, dnfs ? `${dnfs} DNF` : ''), statRow('Best', best ? fmtSolve(best) : '–'), statRow('Worst', worst ? fmtSolve(worst) : '–'), statRow('Mean (all)', dash(mean(list)))];
+    if (ev.fmt === 'mo3') rows.push(statRow('mo3', dash(lastN(list, 3, meanOf)), 'current'), statRow('Best mo3', dash(bestN(list, 3, meanOf))));
+    rows.push(statRow('ao5', dash(lastN(list, 5, average)), 'current'), statRow('Best ao5', dash(bestN(list, 5, average))),
+      statRow('ao12', dash(lastN(list, 12, average)), 'current'), statRow('Best ao12', dash(bestN(list, 12, average))),
+      statRow('ao100', dash(lastN(list, 100, average)), 'current'), statRow('Best ao100', dash(bestN(list, 100, average))));
+    openDialog(`<h2>Statistics · ${esc(session().name)} · ${esc(ev.name)}</h2>
+      <div class="chart-wrap" id="chartWrap"><svg id="chart" viewBox="0 0 ${CH.w} ${CH.h}" preserveAspectRatio="none" role="img" aria-label="Session times chart"></svg>
+      <div class="chart-legend"><span><i style="background:#4f8cff"></i>time</span><span><i style="background:#c97a1c"></i>ao12</span></div><div class="chart-tip" id="chartTip"></div></div>
+      <div class="section-title">Statistics</div><div class="group">${rows.join('')}</div>
+      <div class="actions"><button class="primary" id="dlgClose">Close</button></div>`, 'wide');
     $('dlgClose').addEventListener('click', () => closeDialog());
     renderChart($('chart'), list);
     const svg = $('chart'), tip = $('chartTip'), wrap = $('chartWrap');
@@ -1278,7 +1261,7 @@
   function renderChart(svg, list) {
     const pts = list.map((s, i) => ({ i, v: effectiveMs(s), s }));
     const valid = pts.filter(p => isFinite(p.v));
-    if (valid.length < 2) { svg.innerHTML = `<text x="${CH.w / 2}" y="${CH.h / 2}" fill="#8e8e93" font-size="13" text-anchor="middle" font-family="inherit">Wykres pojawi się po dwóch ułożeniach</text>`; chartPts = []; return; }
+    if (valid.length < 2) { svg.innerHTML = `<text x="${CH.w / 2}" y="${CH.h / 2}" fill="#8e8e93" font-size="13" text-anchor="middle" font-family="inherit">The chart appears after two solves</text>`; chartPts = []; return; }
     const ys = valid.map(p => p.v);
     let lo = Math.min(...ys), hi = Math.max(...ys);
     if (hi === lo) { hi += 500; lo -= 500; }
@@ -1314,22 +1297,22 @@
   function openSettings() {
     const sw = (id, label, sub, checked, disabled) => `<label class="row"><div>${label}${sub ? `<div class="sub">${sub}</div>` : ''}</div><span class="switch"><input type="checkbox" id="${id}"${checked ? ' checked' : ''}${disabled ? ' disabled' : ''}><span class="knob"></span></span></label>`;
     const ev = event();
-    openDialog(`<h2>Ustawienia</h2>
+    openDialog(`<h2>Settings</h2>
       <div class="section-title">Timer</div><div class="group">
-        ${sw('optInspection', 'Inspekcja 15 s', ev.insp ? 'Kary +2 / DNF według zasad WCA' : 'Niedostępna w tej konkurencji', state.inspection && ev.insp, !ev.insp)}
-        ${sw('optHideTime', 'Ukryj czas podczas układania', '', state.hideTime)}
+        ${sw('optInspection', '15 s inspection', ev.insp ? 'WCA +2 / DNF penalties' : 'Not available in this event', state.inspection && ev.insp, !ev.insp)}
+        ${sw('optHideTime', 'Hide time while solving', '', state.hideTime)}
       </div>
-      <div class="section-title">Panele</div><div class="group">
-        ${sw('optImage', 'Obrazek scramble', 'Stan łamigłówki po wykonaniu scramble', state.showImage)}
-        ${sw('optStats', 'ao5 / ao12 pod zegarem', 'Aktualne średnie pod timerem', state.showStats)}
+      <div class="section-title">Panels</div><div class="group">
+        ${sw('optImage', 'Scramble image', 'Puzzle state after the scramble', state.showImage)}
+        ${sw('optStats', 'Averages under the timer', 'ao5 / ao12 (mo3 / ao5 for mean-of-3 events)', state.showStats)}
       </div>
-      <div class="section-title">Skróty</div><div class="group">
-        <div class="row"><div>Start</div><div class="sub">przytrzymaj <span class="kbd">Spacja</span>, puść gdy zielony</div></div>
-        <div class="row"><div>Stop</div><div class="sub">dowolny klawisz</div></div>
-        <div class="row"><div>Następny / poprzedni scramble</div><div class="sub"><span class="kbd">N</span> / <span class="kbd">P</span></div></div>
-        <div class="row"><div>Anuluj inspekcję</div><div class="sub"><span class="kbd">Esc</span></div></div>
+      <div class="section-title">Shortcuts</div><div class="group">
+        <div class="row"><div>Start</div><div class="sub">hold <span class="kbd">Space</span>, release when green</div></div>
+        <div class="row"><div>Stop</div><div class="sub">any key</div></div>
+        <div class="row"><div>Next / previous scramble</div><div class="sub"><span class="kbd">N</span> / <span class="kbd">P</span></div></div>
+        <div class="row"><div>Cancel inspection</div><div class="sub"><span class="kbd">Esc</span></div></div>
       </div>
-      <div class="actions"><button class="primary" id="dlgClose">Zamknij</button></div>`);
+      <div class="actions"><button class="primary" id="dlgClose">Close</button></div>`);
     $('dlgClose').addEventListener('click', () => closeDialog());
     $('optInspection').addEventListener('change', e => { state.inspection = e.target.checked; save(); });
     $('optHideTime').addEventListener('change', e => { state.hideTime = e.target.checked; save(); });
@@ -1348,21 +1331,21 @@
   }
   el.sessionSel.addEventListener('change', () => { switchSession(el.sessionSel.value); el.sessionSel.blur(); });
   $('btnNewSession').addEventListener('click', async () => {
-    const name = await ask({ title: 'Nowa sesja', input: 'Nazwa sesji', value: `Sesja ${state.sessions.length + 1}`, ok: 'Utwórz' });
+    const name = await ask({ title: 'New session', input: 'Session name', value: `Session ${state.sessions.length + 1}`, ok: 'Create' });
     if (name === null) return;
-    const s = { id: uid(), name: name || `Sesja ${state.sessions.length + 1}`, event: session().event, solves: [] };
+    const s = { id: uid(), name: name || `Session ${state.sessions.length + 1}`, event: session().event, solves: [] };
     state.sessions.push(s);
     switchSession(s.id);
   });
   $('btnRename').addEventListener('click', async () => {
-    const name = await ask({ title: 'Zmień nazwę sesji', input: 'Nazwa sesji', value: session().name, ok: 'Zapisz' });
+    const name = await ask({ title: 'Rename session', input: 'Session name', value: session().name, ok: 'Save' });
     if (!name) return;
     session().name = name; save(); render();
   });
   $('btnDeleteSession').addEventListener('click', async () => {
     if (state.sessions.length <= 1) return;
     const s = session();
-    if (!await ask({ title: `Usunąć sesję „${s.name}”?`, message: `Sesja ma ${s.solves.length} ułożeń. Tej operacji nie można cofnąć.`, ok: 'Usuń', danger: true })) return;
+    if (!await ask({ title: `Delete session “${s.name}”?`, message: `The session has ${s.solves.length} solves. This cannot be undone.`, ok: 'Delete', danger: true })) return;
     state.sessions = state.sessions.filter(x => x.id !== s.id);
     switchSession(state.sessions[0].id);
   });
@@ -1374,14 +1357,14 @@
   });
   $('btnClear').addEventListener('click', async () => {
     if (!solves().length) return;
-    if (!await ask({ title: 'Wyczyścić czasy?', message: `Wszystkie ${solves().length} ułożenia w sesji „${session().name}” zostaną usunięte.`, ok: 'Wyczyść', danger: true })) return;
+    if (!await ask({ title: 'Clear times?', message: `All ${solves().length} solves in session “${session().name}” will be deleted.`, ok: 'Clear', danger: true })) return;
     session().solves = []; resetDisplay(); save(); render();
   });
   $('btnExport').addEventListener('click', () => {
     const list = solves();
     if (!list.length) return;
     const q = v => `"${String(v).replace(/"/g, '""')}"`;
-    const lines = ['nr,czas_ms,kara,wynik,konkurencja,scramble,data'];
+    const lines = ['no,time_ms,penalty,result,event,scramble,date'];
     list.forEach((s, i) => lines.push([i + 1, s.ms, s.penalty || '', fmtSolve(s), session().event, q(s.scramble), s.date].join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
