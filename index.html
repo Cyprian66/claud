@@ -2,22 +2,24 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Cube Timer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap">
 <style>
   :root {
-    --bg: #0f1115;
-    --panel: #181b22;
-    --panel-2: #1f232c;
-    --text: #e8eaf0;
-    --muted: #8b90a0;
+    --bg: #000000;
+    --card: #1c1c1e;
+    --card-2: #2c2c2e;
+    --text: #ffffff;
+    --muted: #8e8e93;
     --accent: #4f8cff;
-    --ready: #37d67a;
+    --ready: #34d399;
     --hold: #ff5c5c;
-    --border: #2a2f3a;
-    --radius: 12px;
-    --font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --mono: "SF Mono", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+    --border: #2c2c2e;
+    --radius: 18px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --tabs-h: 64px;
   }
   * { box-sizing: border-box; }
   [hidden] { display: none !important; }
@@ -29,209 +31,396 @@
     font-family: var(--font);
     -webkit-user-select: none;
     user-select: none;
+    -webkit-tap-highlight-color: transparent;
     overflow: hidden;
   }
+  button, select { font-family: var(--font); color: var(--text); }
+  button { background: none; border: 0; cursor: pointer; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
   .app {
+    height: 100%;
     display: grid;
-    grid-template-columns: 320px 1fr;
-    height: 100vh;
+    grid-template-rows: auto 1fr var(--tabs-h);
+    grid-template-columns: 1fr;
+    grid-template-areas: "top" "body" "tabs";
   }
-  /* --- sidebar --- */
-  .sidebar {
-    background: var(--panel);
-    border-right: 1px solid var(--border);
+  /* ---------- top bar ---------- */
+  .top {
+    grid-area: top;
+    display: flex;
+    justify-content: center;
+    padding: 12px 16px 4px;
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    background: var(--card);
+    border-radius: 14px;
+    overflow: hidden;
+    max-width: 100%;
+  }
+  .pill .session {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    max-width: 60vw;
+  }
+  .pill .session span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pill .session svg { flex: none; width: 24px; height: 24px; }
+  .pill .event {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+  }
+  .pill .event select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: transparent;
+    border: 0;
+    color: var(--accent);
+    font-size: 17px;
+    font-weight: 500;
+    padding: 10px 30px 10px 14px;
+    max-width: 44vw;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+  .pill .event::after {
+    content: "";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    width: 8px; height: 8px;
+    border-right: 2px solid var(--accent);
+    border-bottom: 2px solid var(--accent);
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+
+  /* ---------- body / views ---------- */
+  .body { grid-area: body; min-height: 0; display: grid; grid-template-columns: 1fr; }
+  .view { min-height: 0; overflow-y: auto; padding: 0 16px; }
+  .view.scroll { padding-bottom: 16px; }
+
+  /* timer view */
+  #view-timer {
     display: flex;
     flex-direction: column;
-    min-height: 0;
+    overflow: hidden;
+    transition: background 0.15s;
+    border-radius: 0;
   }
-  .sidebar header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .sidebar h1 { font-size: 18px; margin: 0; letter-spacing: 0.5px; white-space: nowrap; }
-  .sidebar header select { max-width: 170px; }
-  .stats {
-    padding: 12px 16px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 8px 16px;
-    border-bottom: 1px solid var(--border);
-    font-size: 14px;
-  }
-  .stats .label { color: var(--muted); }
-  .stats .value { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
-  .times {
+  #view-timer.holding { background: #2a1519; }
+  #view-timer.ready { background: #0f2a1f; }
+  #view-timer.inspecting { background: #14151f; }
+  .stage {
     flex: 1;
-    overflow-y: auto;
     min-height: 0;
-  }
-  .times table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .times th, .times td { padding: 6px 10px; text-align: right; }
-  .times th { color: var(--muted); font-weight: 500; position: sticky; top: 0; background: var(--panel); }
-  .times td:first-child, .times th:first-child { text-align: left; color: var(--muted); }
-  .times tr { cursor: pointer; }
-  .times tbody tr:hover { background: var(--panel-2); }
-  .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .times td.best { color: var(--ready); font-weight: 600; }
-  .times .empty { padding: 32px 16px; color: var(--muted); text-align: center; }
-  .sidebar footer {
-    padding: 12px 16px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  /* --- main --- */
-  .main {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 24px;
-    position: relative;
-    transition: background 0.15s;
-    min-height: 0;
+    gap: 6vh;
+    padding: 8px 0;
   }
-  .main.holding { background: #2a1519; }
-  .main.ready { background: #12291c; }
-  .main.inspecting { background: #1d1f2a; }
   .scramble {
     font-family: var(--mono);
-    font-size: clamp(16px, 2.2vw, 28px);
-    line-height: 1.6;
+    font-weight: 500;
+    font-size: clamp(15px, 2.4vmin, 26px);
+    line-height: 1.7;
     text-align: center;
     max-width: 900px;
-    color: var(--text);
-    margin-bottom: 40px;
-    min-height: 2em;
     white-space: pre-line;
-    max-height: 40vh;
+    max-height: 30vh;
     overflow-y: auto;
+    color: var(--text);
   }
-  .scramble.long { font-size: clamp(14px, 1.6vw, 22px); }
-  .scramble.multi { text-align: left; font-size: clamp(13px, 1.5vw, 20px); }
+  .scramble.long { font-size: clamp(13px, 1.9vmin, 20px); }
+  .scramble.multi { text-align: left; font-size: clamp(12px, 1.8vmin, 19px); line-height: 1.55; }
   .scramble.hidden-during-solve { visibility: hidden; }
   .timer {
     font-family: var(--mono);
-    font-size: clamp(64px, 14vw, 180px);
     font-weight: 600;
+    font-size: clamp(56px, 13vmin, 150px);
     line-height: 1;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
     transition: color 0.1s;
   }
-  .main.holding .timer { color: var(--hold); }
-  .main.ready .timer { color: var(--ready); }
-  .main.inspecting .timer { color: var(--accent); }
-  .penalty-bar { margin-top: 20px; display: flex; gap: 8px; min-height: 34px; flex-wrap: wrap; justify-content: center; align-items: center; }
-  .hint { margin-top: 32px; color: var(--muted); font-size: 14px; text-align: center; max-width: 520px; }
-  .topbar {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-  button, select {
-    background: var(--panel-2);
-    color: var(--text);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    padding: 6px 12px;
+  .holding .timer { color: var(--hold); }
+  .ready .timer { color: var(--ready); }
+  .inspecting .timer { color: var(--accent); }
+  .penalty-bar { display: flex; gap: 8px; min-height: 34px; justify-content: center; align-items: center; margin-top: -3vh; }
+  .penalty-bar:empty { margin-top: 0; min-height: 0; }
+  .penalty-bar button, .chip {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 7px 14px;
     font-size: 14px;
-    cursor: pointer;
-    font-family: var(--font);
+    font-weight: 500;
   }
-  button:hover { border-color: var(--accent); }
-  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  button.danger:hover { border-color: var(--hold); color: var(--hold); }
-  button.small { padding: 4px 8px; font-size: 12px; }
-  label.check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
-  label.check.disabled { opacity: 0.4; cursor: default; }
-  /* --- modal --- */
-  .modal-bg {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.6);
-    display: none;
+  .penalty-bar button.primary { background: var(--accent); color: #fff; }
+  .penalty-bar button.danger { color: var(--hold); }
+  .hint { color: var(--muted); font-size: 13px; text-align: center; max-width: 520px; margin-top: -3vh; }
+
+  .cards {
+    flex: none;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+    padding: 8px 0 12px;
+  }
+  .cards.no-image { grid-template-columns: 1fr; }
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    min-height: 150px;
+    display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 10;
+    padding: 14px;
+  }
+  .card.image { cursor: zoom-in; }
+  .card.image svg { width: 100%; height: 100%; max-height: 190px; display: block; }
+  .card.stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px 12px;
+    align-items: center;
+  }
+  .stat { text-align: center; }
+  .stat .l { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .stat .v { font-family: var(--mono); font-weight: 600; font-size: clamp(18px, 3.4vmin, 30px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .stat .v.dnf { color: var(--hold); }
+  .card.stats .divider { grid-column: 1 / -1; height: 1px; background: var(--card-2); }
+
+  /* times list */
+  .times table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .times th, .times td { padding: 9px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+  .times th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; position: sticky; top: 0; background: var(--bg); }
+  .times td:first-child, .times th:first-child { text-align: left; color: var(--muted); }
+  .times tr { cursor: pointer; }
+  .times tbody tr:hover { background: var(--card); }
+  .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .times td.best { color: var(--ready); font-weight: 600; }
+  .times .empty { padding: 48px 16px; color: var(--muted); text-align: center; }
+  .side { display: none; }
+
+  /* generic section styling for stats/settings */
+  .section-title { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 22px 0 8px 4px; }
+  .group { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 13px 16px; min-height: 50px;
+    border-bottom: 1px solid var(--card-2);
+    font-size: 16px;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .row .value { font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--text); }
+  .row .value.dnf { color: var(--hold); }
+  .row button.action { color: var(--accent); font-size: 16px; padding: 0; }
+  .row button.action.danger { color: var(--hold); }
+  .row select {
+    background: var(--card-2); border: 0; border-radius: 8px; padding: 6px 10px; font-size: 15px;
+  }
+  /* toggle switch */
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch .knob {
+    position: absolute; inset: 0; background: #39393d; border-radius: 16px; transition: background 0.15s; cursor: pointer;
+  }
+  .switch .knob::after {
+    content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%;
+    background: #fff; transition: transform 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+  }
+  .switch input:checked + .knob { background: var(--ready); }
+  .switch input:checked + .knob::after { transform: translateX(20px); }
+  .switch input:disabled + .knob { opacity: 0.4; cursor: default; }
+  .switch input:focus-visible + .knob { outline: 2px solid var(--accent); }
+
+  /* chart */
+  .chart-wrap { background: var(--card); border-radius: var(--radius); padding: 14px 10px 8px; }
+  .chart-wrap svg { width: 100%; height: 220px; display: block; overflow: visible; }
+  .chart-legend { display: flex; gap: 16px; padding: 4px 6px 0; color: var(--muted); font-size: 12px; }
+  .chart-legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; border-radius: 1px; }
+  .chart-tip {
+    position: absolute; pointer-events: none; background: var(--card-2); color: var(--text);
+    padding: 6px 9px; border-radius: 8px; font-size: 12px; font-family: var(--mono); white-space: nowrap;
+    transform: translate(-50%, -110%); display: none;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    grid-area: tabs;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    border-top: 1px solid var(--border);
+    background: var(--bg);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .tabs button {
+    flex: 1;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    color: var(--muted);
+    font-size: 10px;
+    position: relative;
+  }
+  .tabs button svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button.active { color: var(--text); }
+  .tabs button.active::after {
+    content: ""; position: absolute; bottom: 6px; width: 40px; height: 3px; border-radius: 2px; background: var(--accent);
+  }
+
+  /* ---------- modal / sheet ---------- */
+  .modal-bg {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+    display: none; align-items: flex-end; justify-content: center; z-index: 20;
   }
   .modal-bg.open { display: flex; }
-  .modal {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 20px;
-    width: min(560px, 90vw);
-    max-height: 90vh;
+  .sheet {
+    background: var(--card);
+    border-radius: 22px 22px 0 0;
+    width: min(560px, 100vw);
+    max-height: 85vh;
     overflow-y: auto;
-    -webkit-user-select: text;
-    user-select: text;
+    padding: 12px 16px calc(20px + env(safe-area-inset-bottom));
+    -webkit-user-select: text; user-select: text;
   }
-  .modal h2 { margin: 0 0 12px; font-size: 18px; }
-  .modal .big { font-family: var(--mono); font-size: 40px; margin-bottom: 8px; }
-  .modal .scr { font-family: var(--mono); color: var(--muted); font-size: 14px; line-height: 1.6; margin-bottom: 16px; white-space: pre-line; }
-  .modal .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .modal .row .spacer { flex: 1; }
-  /* --- responsive --- */
-  @media (max-width: 800px) {
-    body { overflow: auto; }
-    .app { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; min-height: 100vh; }
-    .sidebar { order: 2; border-right: none; border-top: 1px solid var(--border); max-height: 50vh; }
-    .main { order: 1; min-height: 60vh; }
-    .topbar { position: static; margin-bottom: 16px; justify-content: center; }
-    .scramble { max-height: none; }
+  .sheet .grab { width: 40px; height: 4px; border-radius: 2px; background: #48484a; margin: 0 auto 14px; }
+  .sheet h2 { margin: 0 0 14px; font-size: 18px; text-align: center; }
+  .sheet .big { font-family: var(--mono); font-weight: 600; font-size: 44px; text-align: center; margin-bottom: 6px; }
+  .sheet .big.dnf { color: var(--hold); }
+  .sheet .scr { font-family: var(--mono); color: var(--muted); font-size: 13px; line-height: 1.6; white-space: pre-line; text-align: center; margin: 0 auto 14px; }
+  .sheet .preview svg { width: 100%; max-height: 220px; display: block; margin: 0 auto 14px; }
+  .sheet .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .sheet .actions button { background: var(--card-2); border-radius: 12px; padding: 10px 16px; font-size: 15px; font-weight: 500; }
+  .sheet .actions button.primary { background: var(--accent); color: #fff; }
+  .sheet .actions button.danger { color: var(--hold); }
+  .sheet .list .row { padding: 12px 6px; cursor: pointer; }
+  .sheet .list .row.current { color: var(--accent); }
+  .sheet .list .row .name { font-weight: 500; }
+  .sheet .list .row .tools { display: flex; gap: 4px; }
+  .sheet .list .row .tools button { color: var(--muted); padding: 6px; border-radius: 8px; }
+  .sheet .list .row .tools button:hover { background: var(--card-2); color: var(--text); }
+  .sheet .list .row .tools svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }
+  .sheet .zoom svg { width: 100%; max-height: 70vh; display: block; }
+
+  /* ---------- desktop ---------- */
+  @media (min-width: 960px) {
+    .app {
+      grid-template-columns: 1fr 380px;
+      grid-template-areas: "top top" "body side" "tabs tabs";
+    }
+    .side {
+      grid-area: side;
+      display: flex; flex-direction: column;
+      border-left: 1px solid var(--border);
+      min-height: 0;
+    }
+    .side .side-head { padding: 14px 16px 6px; color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+    .side .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 8px; }
+    .tabs button[data-tab="times"] { display: none; }
+    .view { padding: 0 32px; }
+    .view.scroll { max-width: 860px; width: 100%; margin: 0 auto; }
+    .cards { max-width: 820px; width: 100%; margin: 0 auto; gap: 18px; }
+    .card { min-height: 170px; }
+    .modal-bg { align-items: center; }
+    .sheet { border-radius: 22px; padding-bottom: 20px; }
+    .sheet .grab { display: none; }
   }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
 <body>
 <div class="app">
-  <aside class="sidebar">
-    <header>
-      <h1>Cube Timer</h1>
-      <select id="cubeType" title="Konkurencja"></select>
-    </header>
-    <div class="stats" id="stats"></div>
-    <div class="times" id="timesList"></div>
-    <footer>
-      <button id="btnExport" class="small">Eksportuj CSV</button>
-      <button id="btnClear" class="small danger">Wyczyść sesję</button>
-    </footer>
+  <header class="top">
+    <div class="pill">
+      <button class="session" id="sessionBtn" title="Sesje">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="3" y="7" width="12" height="12" rx="2.5"/><path d="M8 7V5.5A2.5 2.5 0 0 1 10.5 3h8A2.5 2.5 0 0 1 21 5.5v8a2.5 2.5 0 0 1-2.5 2.5H17"/></svg>
+        <span id="sessionName">Default Session</span>
+      </button>
+      <div class="event"><select id="eventSel" title="Konkurencja"></select></div>
+    </div>
+  </header>
+
+  <div class="body">
+    <section class="view" id="view-timer">
+      <div class="stage" id="stage">
+        <div class="scramble" id="scramble"></div>
+        <div class="timer" id="timer">0.000</div>
+        <div class="penalty-bar" id="penaltyBar"></div>
+        <div class="hint" id="hint"></div>
+      </div>
+      <div class="cards" id="cards">
+        <div class="card image" id="imgCard" title="Powiększ"><div id="scrImg"></div></div>
+        <div class="card stats" id="miniStats"></div>
+      </div>
+    </section>
+
+    <section class="view scroll" id="view-times" hidden>
+      <div class="section-title">Czasy w sesji</div>
+      <div class="times" id="timesMobile"></div>
+    </section>
+
+    <section class="view scroll" id="view-stats" hidden>
+      <div class="section-title">Wykres</div>
+      <div class="chart-wrap" id="chartWrap" style="position:relative">
+        <svg id="chart" viewBox="0 0 600 220" preserveAspectRatio="none" role="img" aria-label="Wykres czasów w sesji"></svg>
+        <div class="chart-legend" id="chartLegend"></div>
+        <div class="chart-tip" id="chartTip"></div>
+      </div>
+      <div class="section-title">Statystyki</div>
+      <div class="group" id="statsFull"></div>
+    </section>
+
+    <section class="view scroll" id="view-settings" hidden>
+      <div class="section-title">Timer</div>
+      <div class="group">
+        <label class="row" id="inspRow"><div>Inspekcja 15 s<div class="sub">Kary +2 / DNF według zasad WCA</div></div><span class="switch"><input type="checkbox" id="optInspection"><span class="knob"></span></span></label>
+        <label class="row"><div>Ukryj czas podczas układania</div><span class="switch"><input type="checkbox" id="optHideTime"><span class="knob"></span></span></label>
+        <label class="row"><div>Obrazek scramble<div class="sub">Podgląd stanu łamigłówki na ekranie timera</div></div><span class="switch"><input type="checkbox" id="optImage"><span class="knob"></span></span></label>
+        <div class="row"><div>Dokładność czasu</div><select id="optPrecision"><option value="2">0.00</option><option value="3">0.000</option></select></div>
+      </div>
+      <div class="section-title">Sesja</div>
+      <div class="group">
+        <div class="row"><div>Zmień nazwę sesji</div><button class="action" id="btnRename">Zmień</button></div>
+        <div class="row"><div>Eksportuj czasy<div class="sub">Plik CSV z czasami, karami i scramble</div></div><button class="action" id="btnExport">Eksportuj</button></div>
+        <div class="row"><div>Wyczyść czasy w sesji</div><button class="action danger" id="btnClear">Wyczyść</button></div>
+      </div>
+      <div class="section-title">Skróty</div>
+      <div class="group">
+        <div class="row"><div>Start</div><div class="sub">przytrzymaj spację lub ekran, puść gdy zielony</div></div>
+        <div class="row"><div>Stop</div><div class="sub">dowolny klawisz lub dotknięcie</div></div>
+        <div class="row"><div>Nowy scramble</div><div class="sub">klawisz N</div></div>
+        <div class="row"><div>Anuluj inspekcję</div><div class="sub">Esc</div></div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="side" id="side">
+    <div class="side-head">Czasy w sesji</div>
+    <div class="times" id="timesSide"></div>
   </aside>
 
-  <main class="main" id="main">
-    <div class="topbar">
-      <label class="check" id="inspWrap"><input type="checkbox" id="optInspection"> Inspekcja 15s</label>
-      <label class="check"><input type="checkbox" id="optHideTime"> Ukryj czas</label>
-      <button id="btnNewScramble" class="small">Nowy scramble (N)</button>
-    </div>
-    <div class="scramble" id="scramble"></div>
-    <div class="timer" id="timer">0.00</div>
-    <div class="penalty-bar" id="penaltyBar"></div>
-    <div class="hint" id="hint"></div>
-  </main>
+  <nav class="tabs" id="tabs">
+    <button data-tab="timer" class="active" title="Timer"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5M12 2.5V6"/></svg>Timer</button>
+    <button data-tab="times" title="Czasy"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 9h9M7.5 12h9M7.5 15h9"/></svg>Czasy</button>
+    <button data-tab="stats" title="Statystyki"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M12 2.5V12l6.7 6.7M12 12h9.5"/></svg>Statystyki</button>
+    <button data-tab="settings" title="Ustawienia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Ustawienia</button>
+  </nav>
 </div>
 
 <div class="modal-bg" id="modalBg">
-  <div class="modal">
-    <h2 id="mTitle">Ułożenie</h2>
-    <div class="big" id="mTime"></div>
-    <div class="scr" id="mScramble"></div>
-    <div class="row">
-      <span id="mControls" class="row"></span>
-      <span class="spacer"></span>
-      <button id="mDelete" class="danger">Usuń</button>
-      <button id="mClose" class="primary">Zamknij</button>
-    </div>
-  </div>
+  <div class="sheet" id="sheet"></div>
 </div>
 
 <script>
@@ -242,10 +431,465 @@
   const pick = a => a[rnd(a.length)];
   const MODS = ['', "'", '2'];
 
-  // ---------- Scramble generation ----------
-  // NxN: faces grouped by axis (U/D, R/L, F/B). Within one axis run no move
-  // (face + layer width) repeats and the run is capped, so redundant sequences
-  // like R L R or U U' are never produced.
+  // =====================================================================
+  //  Puzzle geometry engine
+  //  Every sticker is a polygon on a regular polyhedron. A move rotates the
+  //  centroids of the selected stickers around an axis and the colors follow
+  //  the centroids to their new positions. Nets are unfolded along shared edges.
+  // =====================================================================
+  const V = {
+    add: (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]],
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+    scale: (a, s) => [a[0] * s, a[1] * s, a[2] * s],
+    dot: (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2],
+    cross: (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]],
+    len: a => Math.hypot(a[0], a[1], a[2]),
+    norm: a => V.scale(a, 1 / V.len(a)),
+    eq: (a, b, eps) => Math.abs(a[0] - b[0]) < eps && Math.abs(a[1] - b[1]) < eps && Math.abs(a[2] - b[2]) < eps,
+    centroid: pts => V.scale(pts.reduce((a, p) => V.add(a, p), [0, 0, 0]), 1 / pts.length),
+    rot(p, k, th) { // Rodrigues rotation of p around unit axis k by th (right-hand rule)
+      const c = Math.cos(th), s = Math.sin(th);
+      return V.add(V.add(V.scale(p, c), V.scale(V.cross(k, p), s)), V.scale(k, V.dot(k, p) * (1 - c)));
+    },
+  };
+  const P2 = {
+    add: (a, b) => [a[0] + b[0], a[1] + b[1]],
+    sub: (a, b) => [a[0] - b[0], a[1] - b[1]],
+    scale: (a, s) => [a[0] * s, a[1] * s],
+    lerp: (a, b, t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t],
+    norm: a => { const l = Math.hypot(a[0], a[1]); return [a[0] / l, a[1] / l]; },
+    inter(p, d, q, e) { // p + t d = q + s e
+      const den = d[0] * e[1] - d[1] * e[0];
+      const t = ((q[0] - p[0]) * e[1] - (q[1] - p[1]) * e[0]) / den;
+      return [p[0] + d[0] * t, p[1] + d[1] * t];
+    },
+  };
+
+  // face: outward normal from its centroid (polyhedron centered at origin), CCW from outside
+  function makeFace(name, verts, color) {
+    const center = V.centroid(verts);
+    const n = V.norm(center);
+    const cr = V.cross(V.sub(verts[1], verts[0]), V.sub(verts[2], verts[0]));
+    if (V.dot(cr, n) < 0) verts = verts.slice().reverse();
+    const u = V.norm(V.sub(verts[0], center));
+    const v = V.cross(n, u);
+    const to2 = p => { const d = V.sub(p, center); return [V.dot(d, u), V.dot(d, v)]; };
+    const to3 = q => V.add(center, V.add(V.scale(u, q[0]), V.scale(v, q[1])));
+    return { name, n, center, verts, color, to2, to3, local: verts.map(to2) };
+  }
+
+  // ---- sticker subdivisions in face-local 2D ----
+  function quadGrid(Q, n) {
+    const P = (s, t) => P2.add(Q[0], P2.add(P2.scale(P2.sub(Q[1], Q[0]), s), P2.scale(P2.sub(Q[3], Q[0]), t)));
+    const out = [];
+    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++)
+      out.push([P(i / n, j / n), P((i + 1) / n, j / n), P((i + 1) / n, (j + 1) / n), P(i / n, (j + 1) / n)]);
+    return out;
+  }
+  function triGrid(T, n) {
+    const [A, B, C] = T;
+    const P = (i, j) => P2.add(A, P2.add(P2.scale(P2.sub(B, A), i / n), P2.scale(P2.sub(C, A), j / n)));
+    const out = [];
+    for (let i = 0; i < n; i++) for (let j = 0; i + j < n; j++) {
+      out.push([P(i, j), P(i + 1, j), P(i, j + 1)]);
+      if (i + j < n - 1) out.push([P(i + 1, j), P(i + 1, j + 1), P(i, j + 1)]);
+    }
+    return out;
+  }
+  function skewbStickers(Q) {
+    const m = Q.map((q, k) => P2.lerp(q, Q[(k + 1) % 4], 0.5));
+    const out = [m];
+    for (let k = 0; k < 4; k++) out.push([Q[k], m[k], m[(k + 3) % 4]]);
+    return out;
+  }
+  function pentaStickers(Q, inset) {
+    const n = 5, L = [];
+    for (let k = 0; k < n; k++) {
+      const e = P2.sub(Q[(k + 1) % n], Q[k]);
+      const m = P2.norm([-e[1], e[0]]); // inward for CCW
+      L.push({ p: P2.add(Q[k], P2.scale(m, inset)), d: e });
+    }
+    const E = k => ({ p: Q[k], d: P2.sub(Q[(k + 1) % n], Q[k]) });
+    const X = (a, b) => P2.inter(a.p, a.d, b.p, b.d);
+    const C = [];
+    for (let k = 0; k < n; k++) C.push(X(L[(k + 4) % n], L[k]));
+    const out = [C.slice()];
+    for (let k = 0; k < n; k++) {
+      const prev = (k + 4) % n;
+      out.push([Q[k], X(L[prev], E(k)), C[k], X(L[k], E(prev))]);              // corner at Q[k]
+      out.push([X(L[prev], E(k)), X(L[(k + 1) % n], E(k)), C[(k + 1) % n], C[k]]); // edge k
+    }
+    return out;
+  }
+
+  function buildPuzzle(faces, gen) {
+    const stickers = [];
+    faces.forEach((f, fi) => gen(f, fi).forEach(poly => {
+      stickers.push({ f: fi, poly, c: V.centroid(poly.map(f.to3)) });
+    }));
+    const byName = {};
+    faces.forEach((f, i) => { byName[f.name] = i; });
+    return { faces, stickers, byName, solved: stickers.map(s => faces[s.f].color) };
+  }
+
+  function applyMove(puz, colors, axis, angle, select) {
+    const st = puz.stickers, out = colors.slice();
+    for (let i = 0; i < st.length; i++) {
+      if (!select(st[i].c)) continue;
+      const c2 = V.rot(st[i].c, axis, angle);
+      let j = -1;
+      for (let k = 0; k < st.length; k++) if (V.eq(st[k].c, c2, 1e-3)) { j = k; break; }
+      if (j >= 0) out[j] = colors[i];
+    }
+    return out;
+  }
+
+  // ---- nets ----
+  const T2 = {
+    apply: (T, p) => [T.c * p[0] - T.s * p[1] + T.x, T.s * p[0] + T.c * p[1] + T.y],
+    make: (a, x, y) => ({ c: Math.cos(a), s: Math.sin(a), x, y }),
+  };
+  function sharedVerts(a, b) {
+    return a.verts.filter(p => b.verts.some(q => V.eq(p, q, 1e-6)));
+  }
+  function computeNet(puz, components) {
+    const F = puz.faces, T = new Array(F.length);
+    const comps = [];
+    for (const comp of components) {
+      const root = puz.byName[comp.root];
+      const edgeFace = puz.byName[comp.edgeWith];
+      const sv = sharedVerts(F[root], F[edgeFace]);
+      const mid = F[root].to2(V.centroid(sv));
+      const target = comp.dir === 'up' ? Math.PI / 2 : -Math.PI / 2;
+      T[root] = T2.make(target - Math.atan2(mid[1], mid[0]), 0, 0);
+      const members = [root];
+      for (const [pn, cn] of comp.children) {
+        const p = puz.byName[pn], c = puz.byName[cn];
+        const [v1, v2] = sharedVerts(F[p], F[c]);
+        const P1 = F[c].to2(v1), Pt2 = F[c].to2(v2);
+        const Q1 = T2.apply(T[p], F[p].to2(v1)), Q2 = T2.apply(T[p], F[p].to2(v2));
+        const a = Math.atan2(Q2[1] - Q1[1], Q2[0] - Q1[0]) - Math.atan2(Pt2[1] - P1[1], Pt2[0] - P1[0]);
+        const R = T2.make(a, 0, 0), RP = T2.apply(R, P1);
+        T[c] = T2.make(a, Q1[0] - RP[0], Q1[1] - RP[1]);
+        members.push(c);
+      }
+      comps.push(members);
+    }
+    // place components side by side
+    let cursor = 0, first = true;
+    for (const members of comps) {
+      let minX = Infinity, maxX = -Infinity;
+      for (const s of puz.stickers) if (members.includes(s.f))
+        for (const p of s.poly) { const q = T2.apply(T[s.f], p); minX = Math.min(minX, q[0]); maxX = Math.max(maxX, q[0]); }
+      const gap = first ? 0 : (maxX - minX) * 0.12;
+      const shift = cursor + gap - minX;
+      for (const fi of members) T[fi].x += shift;
+      cursor = maxX + shift;
+      first = false;
+    }
+    return T;
+  }
+
+  function svgFromPuzzle(puz, colors, net, stroke) {
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    const paths = puz.stickers.map((s, i) => {
+      const pts = s.poly.map(p => { const q = T2.apply(net[s.f], p); return [q[0], -q[1]]; });
+      for (const [x, y] of pts) { minX = Math.min(minX, x); maxX = Math.max(maxX, x); minY = Math.min(minY, y); maxY = Math.max(maxY, y); }
+      return `<path d="M${pts.map(p => p[0].toFixed(3) + ' ' + p[1].toFixed(3)).join('L')}Z" fill="${colors[i]}"/>`;
+    });
+    const pad = stroke;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${(minX - pad).toFixed(3)} ${(minY - pad).toFixed(3)} ${(maxX - minX + 2 * pad).toFixed(3)} ${(maxY - minY + 2 * pad).toFixed(3)}"><g stroke="#000" stroke-width="${stroke}" stroke-linejoin="round">${paths.join('')}</g></svg>`;
+  }
+
+  // ---- concrete puzzles ----
+  const CUBE_COLORS = { U: '#f2f2f2', D: '#ffd500', F: '#009b48', B: '#0a5bd6', R: '#c41e3a', L: '#ff6a00' };
+  const CUBE_N = { U: [0, 1, 0], D: [0, -1, 0], F: [0, 0, 1], B: [0, 0, -1], R: [1, 0, 0], L: [-1, 0, 0] };
+  function cubeFaces(h) {
+    return Object.keys(CUBE_N).map(name => {
+      const n = CUBE_N[name];
+      const a = Math.abs(n[1]) === 1 ? [1, 0, 0] : [0, 1, 0];
+      const b = V.cross(n, a);
+      const verts = [V.add(V.add(n, a), b), V.add(V.sub(n, a), b), V.sub(V.sub(n, a), b), V.sub(V.add(n, a), b)].map(p => V.scale(p, h));
+      return makeFace(name, verts, CUBE_COLORS[name]);
+    });
+  }
+  const CUBE_NET = [{ root: 'F', edgeWith: 'D', dir: 'down', children: [['F', 'U'], ['F', 'D'], ['F', 'L'], ['F', 'R'], ['R', 'B']] }];
+
+  function makeCube(n) {
+    const puz = buildPuzzle(cubeFaces(n / 2), f => quadGrid(f.local, n));
+    const net = computeNet(puz, CUBE_NET);
+    const step = Math.PI / 2;
+    const parse = tok => {
+      let m = tok.match(/^(\d)?([UDFBRL])(w)?(['2])?$/);
+      if (m) {
+        const depth = m[1] ? +m[1] : (m[3] ? 2 : 1);
+        const turns = m[4] === "'" ? -1 : m[4] === '2' ? 2 : 1;
+        const face = puz.faces[puz.byName[m[2]]];
+        return { axis: face.n, angle: -turns * step, select: c => V.dot(c, face.n) > n / 2 - depth };
+      }
+      m = tok.match(/^([xyz])(['2])?$/);
+      if (m) {
+        const turns = m[2] === "'" ? -1 : m[2] === '2' ? 2 : 1;
+        const axis = { x: CUBE_N.R, y: CUBE_N.U, z: CUBE_N.F }[m[1]];
+        return { axis, angle: -turns * step, select: () => true };
+      }
+      return null;
+    };
+    return { puz, net, parse, stroke: 0.07 };
+  }
+
+  function makeSkewb() {
+    const puz = buildPuzzle(cubeFaces(1), f => skewbStickers(f.local));
+    const net = computeNet(puz, CUBE_NET);
+    const r3 = 1 / Math.sqrt(3);
+    // Fixed corner notation: the corners not touching UFR.
+    const AX = { R: [r3, -r3, -r3], L: [-r3, -r3, r3], U: [-r3, r3, -r3], B: [-r3, -r3, -r3] };
+    const parse = tok => {
+      const m = tok.match(/^([RLUB])(')?$/);
+      if (!m) return null;
+      const axis = AX[m[1]];
+      return { axis, angle: (m[2] ? 1 : -1) * 2 * Math.PI / 3, select: c => V.dot(c, axis) > 0 };
+    };
+    return { puz, net, parse, stroke: 0.05 };
+  }
+
+  function makePyraminx() {
+    const r = 2 * Math.SQRT2 / 3, s3 = Math.sqrt(3) / 2;
+    const VX = { U: [0, 1, 0], L: [-r * s3, -1 / 3, r / 2], R: [r * s3, -1 / 3, r / 2], B: [0, -1 / 3, -r] };
+    const faces = [
+      makeFace('F', [VX.U, VX.L, VX.R], '#009b48'),
+      makeFace('L', [VX.U, VX.B, VX.L], '#c41e3a'),
+      makeFace('R', [VX.U, VX.R, VX.B], '#0a5bd6'),
+      makeFace('D', [VX.L, VX.B, VX.R], '#ffd500'),
+    ];
+    const puz = buildPuzzle(faces, f => triGrid(f.local, 3));
+    const net = computeNet(puz, [{ root: 'F', edgeWith: 'D', dir: 'down', children: [['F', 'L'], ['F', 'R'], ['F', 'D']] }]);
+    const parse = tok => {
+      const m = tok.match(/^([ULRBulrb])(')?$/);
+      if (!m) return null;
+      const axis = VX[m[1].toUpperCase()];
+      const thr = m[1] === m[1].toLowerCase() ? 5 / 9 : 1 / 9; // rows are equally spaced along the vertex axis
+      return { axis, angle: (m[2] ? 1 : -1) * 2 * Math.PI / 3, select: c => V.dot(c, axis) > thr };
+    };
+    return { puz, net, parse, stroke: 0.035 };
+  }
+
+  function makeFTO() {
+    const NAMES = { 'U': [1, 1, 1], 'F': [-1, 1, 1], 'R': [1, -1, 1], 'L': [1, 1, -1], 'D': [-1, -1, -1], 'B': [1, -1, -1], 'BR': [-1, -1, 1], 'BL': [-1, 1, -1] };
+    const COL = { U: '#f2f2f2', F: '#009b48', R: '#c41e3a', L: '#7b3fe4', D: '#ffd500', B: '#0a5bd6', BR: '#ff6a00', BL: '#9a9a9a' };
+    const faces = Object.keys(NAMES).map(name => {
+      const s = NAMES[name];
+      return makeFace(name, [[s[0], 0, 0], [0, s[1], 0], [0, 0, s[2]]], COL[name]);
+    });
+    const puz = buildPuzzle(faces, f => triGrid(f.local, 3));
+    const net = computeNet(puz, [
+      { root: 'U', edgeWith: 'F', dir: 'down', children: [['U', 'F'], ['U', 'L'], ['U', 'R']] },
+      { root: 'D', edgeWith: 'B', dir: 'up', children: [['D', 'B'], ['D', 'BL'], ['D', 'BR']] },
+    ]);
+    const thr = 1 / (3 * Math.sqrt(3));
+    const parse = tok => {
+      const m = tok.match(/^(BL|BR|[UDFBRL])(')?$/);
+      if (!m) return null;
+      const face = puz.faces[puz.byName[m[1]]];
+      return { axis: face.n, angle: (m[2] ? 1 : -1) * 2 * Math.PI / 3, select: c => V.dot(c, face.n) > thr };
+    };
+    return { puz, net, parse, stroke: 0.025 };
+  }
+
+  function makeMegaminx() {
+    const phi = (1 + Math.sqrt(5)) / 2, ip = 1 / phi;
+    const normals = [], verts = [];
+    for (const a of [1, -1]) for (const b of [1, -1]) {
+      normals.push([a, 0, b * phi], [0, a * phi, b], [a * phi, b, 0]); // face centers of this dodecahedron
+      verts.push([0, a * ip, b * phi], [a * ip, b * phi, 0], [a * phi, 0, b * ip]);
+      for (const c of [1, -1]) verts.push([a, b, c]);
+    }
+    const nrm = normals.map(V.norm);
+    const up = nrm[0]; // U
+    const isAdj = (a, b) => Math.abs(V.dot(a, b) - 1 / Math.sqrt(5)) < 1e-6;
+    const uNeighbors = nrm.filter(n => isAdj(n, up));
+    const fN = uNeighbors[0];
+    const frontRaw = V.sub(fN, V.scale(up, V.dot(fN, up)));
+    const right = V.norm(V.cross(up, frontRaw));
+    const lN = uNeighbors.find(n => isAdj(n, fN) && V.dot(n, right) < 0);
+    const named = new Map([[up, 'U'], [V.scale(up, -1), 'D'], [fN, 'F'], [lN, 'L'], [V.scale(fN, -1), 'B']]);
+    const PALETTE = ['#f2f2f2', '#009b48', '#c41e3a', '#0a5bd6', '#ffd500', '#7b3fe4', '#b9b9b9', '#a8e05f', '#ff6a00', '#ff8fc7', '#20c6c6', '#8b5a2b'];
+    let idx = 0;
+    const faces = nrm.map(n => {
+      const dots = verts.map(v => V.dot(v, n)), mx = Math.max(...dots);
+      const fv = verts.filter((v, i) => dots[i] > mx - 1e-6);
+      // order around the normal
+      const tmpU = V.norm(V.sub(fv[0], V.scale(n, V.dot(fv[0], n)))), tmpV = V.cross(n, tmpU);
+      fv.sort((p, q) => Math.atan2(V.dot(p, tmpV), V.dot(p, tmpU)) - Math.atan2(V.dot(q, tmpV), V.dot(q, tmpU)));
+      let name = null;
+      for (const [k, v] of named) if (V.eq(k, n, 1e-6)) name = v;
+      if (!name) name = 'f' + (idx++);
+      return makeFace(name, fv, null);
+    });
+    // colors: U white, D gray, others in palette order
+    let pi = 0;
+    faces.forEach(f => { f.color = f.name === 'U' ? PALETTE[0] : f.name === 'D' ? PALETTE[6] : null; });
+    faces.forEach(f => { if (!f.color) { while ([0, 6].includes(pi)) pi++; f.color = PALETTE[pi++]; } });
+    const [a0, b0] = faces[0].local, e0 = P2.sub(b0, a0), m0 = P2.norm([-e0[1], e0[0]]);
+    const ap = -(a0[0] * m0[0] + a0[1] * m0[1]); // apothem: distance from face center to an edge
+    const inset = 0.4 * ap;
+    const puz = buildPuzzle(faces, f => pentaStickers(f.local, inset));
+    const planeDist = V.dot(faces[0].verts[0], faces[0].n);
+    const thr = planeDist - inset * Math.sin(Math.PI - Math.acos(-1 / Math.sqrt(5)));
+    const children = root => faces.filter(f => isAdj(f.n, faces[puz.byName[root]].n)).map(f => [root, f.name]);
+    const net = computeNet(puz, [
+      { root: 'U', edgeWith: 'F', dir: 'down', children: children('U') },
+      { root: 'D', edgeWith: 'B', dir: 'up', children: children('D') },
+    ]);
+    const step = 2 * Math.PI / 5;
+    const parse = tok => {
+      let m = tok.match(/^U(')?$/);
+      if (m) { const n = faces[puz.byName.U].n; return { axis: n, angle: (m[1] ? 1 : -1) * step, select: c => V.dot(c, n) > thr }; }
+      m = tok.match(/^([RD])(\+\+|--)$/);
+      if (m) {
+        const n = faces[puz.byName[m[1] === 'R' ? 'L' : 'U']].n; // R++ turns everything except L, D++ everything except U
+        return { axis: n, angle: (m[2] === '++' ? 1 : -1) * 2 * step, select: c => V.dot(c, n) < thr };
+      }
+      return null;
+    };
+    return { puz, net, parse, stroke: 0.045 };
+  }
+
+  const PUZZLE_CACHE = {};
+  function getPuzzle(kind) {
+    if (!PUZZLE_CACHE[kind]) {
+      PUZZLE_CACHE[kind] = kind === 'skewb' ? makeSkewb() : kind === 'pyram' ? makePyraminx() : kind === 'fto' ? makeFTO()
+        : kind === 'minx' ? makeMegaminx() : makeCube(parseInt(kind.slice(4), 10));
+    }
+    return PUZZLE_CACHE[kind];
+  }
+  function polyhedronSvg(kind, scramble) {
+    const P = getPuzzle(kind);
+    let colors = P.puz.solved;
+    for (const tok of scramble.split(/\s+/).filter(Boolean)) {
+      const mv = P.parse(tok);
+      if (mv) colors = applyMove(P.puz, colors, mv.axis, mv.angle, mv.select);
+    }
+    return svgFromPuzzle(P.puz, colors, P.net, P.stroke);
+  }
+
+  // ---- Clock ----
+  function clockSvg(scramble) {
+    let front = new Array(9).fill(0), back = new Array(9).fill(0);
+    const PINS = { UL: [0, 0], UR: [0, 2], DL: [2, 0], DR: [2, 2] };
+    const SETS = { UR: ['UR'], DR: ['DR'], DL: ['DL'], UL: ['UL'], U: ['UL', 'UR'], R: ['UR', 'DR'], D: ['DL', 'DR'], L: ['UL', 'DL'], ALL: ['UL', 'UR', 'DL', 'DR'] };
+    let pinsUp = [];
+    for (const tok of scramble.split(/\s+/).filter(Boolean)) {
+      if (tok === 'y2') { [front, back] = [back, front]; continue; }
+      let m = tok.match(/^(UR|DR|DL|UL|U|R|D|L|ALL)(\d)([+-])$/);
+      if (m) {
+        const k = (m[3] === '+' ? 1 : -1) * +m[2];
+        const cells = new Set();
+        for (const p of SETS[m[1]]) {
+          const [r, c] = PINS[p];
+          const r0 = r === 0 ? 0 : 1, c0 = c === 0 ? 0 : 1;
+          for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) cells.add((r0 + i) * 3 + c0 + j);
+          back[r * 3 + (2 - c)] = (back[r * 3 + (2 - c)] - k + 120) % 12;
+        }
+        for (const i of cells) front[i] = (front[i] + k + 120) % 12;
+        continue;
+      }
+      m = tok.match(/^(UR|DR|DL|UL)$/);
+      if (m) pinsUp.push(m[1]);
+    }
+    const frontPins = Object.keys(PINS).map(p => pinsUp.includes(p));
+    const backPins = Object.keys(PINS).map((p, i) => { const [r, c] = PINS[p]; const mirror = Object.keys(PINS).find(q => PINS[q][0] === r && PINS[q][1] === 2 - c); return !pinsUp.includes(mirror); });
+    const panel = (vals, pins, ox, body, dial, hand) => {
+      let s = `<rect x="${ox - 0.75}" y="-0.75" width="3.5" height="3.5" rx="0.35" fill="${body}"/>`;
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) {
+        const cx = ox + c, cy = r, v = vals[r * 3 + c];
+        const a = v * Math.PI / 6;
+        s += `<circle cx="${cx}" cy="${cy}" r="0.42" fill="${dial}"/>`;
+        for (let h = 0; h < 12; h++) { const t = h * Math.PI / 6; s += `<circle cx="${(cx + 0.36 * Math.sin(t)).toFixed(3)}" cy="${(cy - 0.36 * Math.cos(t)).toFixed(3)}" r="${h === 0 ? 0.045 : 0.022}" fill="${hand}" opacity="${h === 0 ? 1 : 0.5}"/>`; }
+        s += `<line x1="${cx}" y1="${cy}" x2="${(cx + 0.3 * Math.sin(a)).toFixed(3)}" y2="${(cy - 0.3 * Math.cos(a)).toFixed(3)}" stroke="${hand}" stroke-width="0.07" stroke-linecap="round"/>`;
+        s += `<circle cx="${cx}" cy="${cy}" r="0.05" fill="${hand}"/>`;
+      }
+      Object.keys(PINS).forEach((p, i) => {
+        const [r, c] = PINS[p];
+        const px = ox + (c === 0 ? 0.5 : 1.5), py = r === 0 ? 0.5 : 1.5;
+        s += pins[i] ? `<circle cx="${px}" cy="${py}" r="0.14" fill="#ffd500" stroke="#000" stroke-width="0.03"/>` : `<circle cx="${px}" cy="${py}" r="0.1" fill="${body}" stroke="${hand}" stroke-width="0.03" opacity="0.6"/>`;
+      });
+      return s;
+    };
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.85 -0.85 7.6 3.7">${panel(front, frontPins, 0, '#1f4fb0', '#f4f4f4', '#101010')}${panel(back, backPins, 3.9, '#dcdcdf', '#1c1c1e', '#f4f4f4')}</svg>`;
+  }
+
+  // ---- Square-1 ----
+  const SQ1_SIDES = ['#009b48', '#c41e3a', '#0a5bd6', '#ff6a00'];
+  function sq1Init() {
+    // corner = two 30° slots, edge = one; the vertical cut sits between slot 11 and 0 and between 5 and 6
+    const IDS = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7];
+    const mk = (ud, idBase) => IDS.map((id, i) => ({
+      id: id + idBase, ud,
+      side: SQ1_SIDES[Math.floor(((15 + 30 * i - 30 + 360) % 360) / 90)], // cube faces span 90° starting at 30°
+    }));
+    return { top: mk('#f2f2f2', 0), bot: mk('#ffd500', 100), mid: false };
+  }
+  function sq1Svg(scramble) {
+    const st = sq1Init();
+    const rotate = (arr, k) => { const out = new Array(12); for (let i = 0; i < 12; i++) out[(((i + k) % 12) + 12) % 12] = arr[i]; return out; };
+    const legal = arr => arr[0].id !== arr[11].id && arr[5].id !== arr[6].id;
+    const re = /\(\s*(-?\d+)\s*,\s*(-?\d+)\s*\)|\//g;
+    let m;
+    while ((m = re.exec(scramble))) {
+      if (m[0] === '/') {
+        if (!legal(st.top) || !legal(st.bot)) continue;
+        const tr = st.top.slice(0, 6).reverse(), br = st.bot.slice(0, 6).reverse();
+        st.top = br.concat(st.top.slice(6));
+        st.bot = tr.concat(st.bot.slice(6));
+        st.mid = !st.mid;
+      } else {
+        st.top = rotate(st.top, +m[1]);
+        st.bot = rotate(st.bot, +m[2]);
+      }
+    }
+    const layer = (arr, cx, mirror) => {
+      const R = 1, R2 = 1.28;
+      const pt = (r, deg) => { const a = (deg - 90) * Math.PI / 180; return [(cx + (mirror ? -1 : 1) * r * Math.cos(a)).toFixed(3), (r * Math.sin(a)).toFixed(3)]; };
+      let s = '';
+      for (let i = 0; i < 12; i++) {
+        const a0 = 30 * i, a1 = a0 + 30;
+        const [x0, y0] = pt(R, a0), [x1, y1] = pt(R, a1), [X0, Y0] = pt(R2, a0), [X1, Y1] = pt(R2, a1);
+        const sweep = mirror ? 0 : 1;
+        s += `<path d="M${cx} 0L${x0} ${y0}A${R} ${R} 0 0 ${sweep} ${x1} ${y1}Z" fill="${arr[i].ud}"/>`;
+        s += `<path d="M${x0} ${y0}L${X0} ${Y0}A${R2} ${R2} 0 0 ${sweep} ${X1} ${Y1}L${x1} ${y1}A${R} ${R} 0 0 ${1 - sweep} ${x0} ${y0}Z" fill="${arr[i].side}"/>`;
+      }
+      for (let i = 0; i < 12; i++) if (arr[i].id !== arr[(i + 11) % 12].id) {
+        const [x, y] = pt(R2, 30 * i);
+        s += `<line x1="${cx}" y1="0" x2="${x}" y2="${y}" stroke="#000" stroke-width="0.06"/>`;
+      }
+      s += `<circle cx="${cx}" cy="0" r="${R}" fill="none" stroke="#000" stroke-width="0.05"/><circle cx="${cx}" cy="0" r="${R2}" fill="none" stroke="#000" stroke-width="0.06"/>`;
+      s += `<line x1="${cx}" y1="${-R2 - 0.12}" x2="${cx}" y2="${-R2 + 0.15}" stroke="#fff" stroke-width="0.06"/><line x1="${cx}" y1="${R2 - 0.15}" x2="${cx}" y2="${R2 + 0.12}" stroke="#fff" stroke-width="0.06"/>`;
+      return s;
+    };
+    const midBar = `<rect x="-0.9" y="1.55" width="0.9" height="0.28" fill="${SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/><rect x="0" y="1.55" width="0.9" height="0.28" fill="${st.mid ? SQ1_SIDES[2] : SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/>`;
+    const midBarR = `<rect x="2.1" y="1.55" width="0.9" height="0.28" fill="${st.mid ? SQ1_SIDES[2] : SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/><rect x="3" y="1.55" width="0.9" height="0.28" fill="${SQ1_SIDES[0]}" stroke="#000" stroke-width="0.04"/>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1.45 -1.45 5.9 3.4">${layer(st.top, 0, false)}${layer(st.bot, 3, true)}${midBar}${midBarR}</svg>`;
+  }
+
+  // ---- dispatcher ----
+  const IMAGE_KIND = {
+    '222': 'cube2', '333': 'cube3', '333oh': 'cube3', '333bf': 'cube3', '444': 'cube4', '444bf': 'cube4',
+    '555': 'cube5', '555bf': 'cube5', '666': 'cube6', '777': 'cube7',
+    'pyram': 'pyram', 'skewb': 'skewb', 'minx': 'minx', 'fto': 'fto', 'clock': 'clock', 'sq1': 'sq1',
+  };
+  function scrambleSvg(eventId, scramble) {
+    const kind = IMAGE_KIND[eventId];
+    if (!kind) return '';
+    if (kind === 'clock') return clockSvg(scramble);
+    if (kind === 'sq1') return sq1Svg(scramble);
+    return polyhedronSvg(kind, scramble);
+  }
+  window.__cubeTimerDebug = { scrambleSvg, getPuzzle, applyMove };
+
+  // =====================================================================
+  //  Scramble generators
+  // =====================================================================
   const FACES = ['U', 'D', 'R', 'L', 'F', 'B'];
   function genNxN(n, length) {
     const moves = [];
@@ -268,11 +912,8 @@
     }
     return moves.join(' ');
   }
-
   function gen222() {
-    // 2x2 only needs R, U, F.
-    const faces = ['R', 'U', 'F'];
-    const moves = [];
+    const faces = ['R', 'U', 'F'], moves = [];
     let last = null;
     const length = 9 + rnd(3);
     while (moves.length < length) {
@@ -283,8 +924,6 @@
     }
     return moves.join(' ');
   }
-
-  // Blindfolded: random orientation appended after the scramble (WCA style).
   function orientation(xs, ys) {
     const parts = [];
     if (Math.random() < 0.8) parts.push(pick(xs));
@@ -294,8 +933,6 @@
   const gen333bf = () => genNxN(3, 20) + orientation(['Rw', "Rw'", 'Rw2', 'Fw', "Fw'"], ['Uw', "Uw'", 'Uw2']);
   const gen444bf = () => genNxN(4, 40) + orientation(['x', "x'", 'x2', 'z', "z'"], ['y', "y'", 'y2']);
   const gen555bf = () => genNxN(5, 60) + orientation(['x', "x'", 'x2', 'z', "z'"], ['y', "y'", 'y2']);
-
-  // Clock: 9 pins-up moves, y2, 5 more moves, then the pins left up at the end.
   function genClock() {
     const v = () => { const n = rnd(12) - 5; return n === 0 ? '0+' : Math.abs(n) + (n > 0 ? '+' : '-'); };
     const a = ['UR', 'DR', 'DL', 'UL', 'U', 'R', 'D', 'L', 'ALL'].map(p => p + v());
@@ -303,8 +940,6 @@
     const pins = ['UR', 'DR', 'DL', 'UL'].filter(() => Math.random() < 0.5);
     return [...a, 'y2', ...b, ...pins].join(' ');
   }
-
-  // Megaminx: Pochmann notation, 7 lines of R±± / D±± pairs ending in U / U'.
   function genMinx() {
     const lines = [];
     for (let i = 0; i < 7; i++) {
@@ -315,7 +950,6 @@
     }
     return lines.join('\n');
   }
-
   function genCorner(faces, length, mods) {
     const m = [];
     let last = null;
@@ -333,22 +967,17 @@
     return m.concat(tips).join(' ');
   }
   const genSkewb = () => genCorner(['U', 'L', 'R', 'B'], 11, ['', "'"]).join(' ');
-
-  // Square-1: the puzzle is simulated so every "/" is a legal slice.
-  // Each layer is 12 slots of 30°; a corner occupies two slots, an edge one.
-  // A slice is legal when slots 0|11 and 5|6 are piece boundaries on both layers.
   function genSq1(pairs) {
     let top = [0, 0, 1, 2, 2, 3, 4, 4, 5, 6, 6, 7];
     let bot = [8, 8, 9, 10, 10, 11, 12, 12, 13, 14, 14, 15];
-    const rot = (arr, k) => { k = ((k % 12) + 12) % 12; return arr.slice(k).concat(arr.slice(0, k)); };
+    const rot = (arr, k) => { const out = new Array(12); for (let i = 0; i < 12; i++) out[(((i + k) % 12) + 12) % 12] = arr[i]; return out; };
     const ok = arr => arr[0] !== arr[11] && arr[5] !== arr[6];
     const out = [];
     while (out.length < pairs) {
-      const a = rnd(12) - 5, b = rnd(12) - 5; // -5 .. 6
+      const a = rnd(12) - 5, b = rnd(12) - 5;
       if (a === 0 && b === 0) continue;
       const t = rot(top, a), bo = rot(bot, b);
       if (!ok(t) || !ok(bo)) continue;
-      // slice: the right halves swap layers and are mirrored
       const tr = t.slice(0, 6).reverse(), br = bo.slice(0, 6).reverse();
       top = br.concat(t.slice(6));
       bot = tr.concat(bo.slice(6));
@@ -356,145 +985,150 @@
     }
     return out.join(' / ');
   }
-
-  // FTO (Face-Turning Octahedron): 8 faces in 4 opposite pairs, order-3 turns.
   const FTO_AXES = [['U', 'D'], ['F', 'B'], ['L', 'BR'], ['R', 'BL']];
   function genFTO(length) {
     const m = [];
     let lastAxis = -1, lastFace = null, run = 0;
     while (m.length < length) {
       const ax = rnd(4), f = FTO_AXES[ax][rnd(2)];
-      if (ax === lastAxis) {
-        if (f === lastFace || run >= 2) continue;
-        run++;
-      } else run = 1;
+      if (ax === lastAxis) { if (f === lastFace || run >= 2) continue; run++; } else run = 1;
       lastAxis = ax; lastFace = f;
       m.push(f + pick(['', "'"]));
     }
     return m.join(' ');
   }
 
-  // ---------- Events ----------
-  // fmt: 'ao'  -> ao5 / ao12 / ao100 (WCA average of 5 format)
-  //      'mo3' -> mean of 3 (6x6, 7x7, blindfolded)
   const EVENTS = {
-    '333':    { name: '3x3x3',                 group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(3, 20) },
-    '222':    { name: '2x2x2',                 group: 'wca', fmt: 'ao',  insp: true,  scr: gen222 },
-    '444':    { name: '4x4x4',                 group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(4, 40) },
-    '555':    { name: '5x5x5',                 group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(5, 60) },
-    '666':    { name: '6x6x6',                 group: 'wca', fmt: 'mo3', insp: true,  scr: () => genNxN(6, 80) },
-    '777':    { name: '7x7x7',                 group: 'wca', fmt: 'mo3', insp: true,  scr: () => genNxN(7, 100) },
-    '333bf':  { name: '3x3x3 bez patrzenia',   group: 'wca', fmt: 'mo3', insp: false, scr: gen333bf },
-    '333oh':  { name: '3x3x3 jedną ręką',      group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(3, 20) },
-    'clock':  { name: 'Clock',                 group: 'wca', fmt: 'ao',  insp: true,  scr: genClock },
-    'minx':   { name: 'Megaminx',              group: 'wca', fmt: 'ao',  insp: true,  scr: genMinx },
-    'pyram':  { name: 'Pyraminx',              group: 'wca', fmt: 'ao',  insp: true,  scr: genPyram },
-    'skewb':  { name: 'Skewb',                 group: 'wca', fmt: 'ao',  insp: true,  scr: genSkewb },
-    'sq1':    { name: 'Square-1',              group: 'wca', fmt: 'ao',  insp: true,  scr: () => genSq1(12 + rnd(3)) },
-    '444bf':  { name: '4x4x4 bez patrzenia',   group: 'wca', fmt: 'mo3', insp: false, scr: gen444bf },
-    '555bf':  { name: '5x5x5 bez patrzenia',   group: 'wca', fmt: 'mo3', insp: false, scr: gen555bf },
-    'fto':    { name: 'FTO (Face-Turning Octahedron)', group: 'other', fmt: 'ao', insp: true, scr: () => genFTO(30) },
+    '333':   { name: '3x3x3',                group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(3, 20) },
+    '222':   { name: '2x2x2',                group: 'wca', fmt: 'ao',  insp: true,  scr: gen222 },
+    '444':   { name: '4x4x4',                group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(4, 40) },
+    '555':   { name: '5x5x5',                group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(5, 60) },
+    '666':   { name: '6x6x6',                group: 'wca', fmt: 'mo3', insp: true,  scr: () => genNxN(6, 80) },
+    '777':   { name: '7x7x7',                group: 'wca', fmt: 'mo3', insp: true,  scr: () => genNxN(7, 100) },
+    '333bf': { name: '3x3x3 bez patrzenia',  group: 'wca', fmt: 'mo3', insp: false, scr: gen333bf },
+    '333oh': { name: '3x3x3 jedną ręką',     group: 'wca', fmt: 'ao',  insp: true,  scr: () => genNxN(3, 20) },
+    'clock': { name: 'Clock',                group: 'wca', fmt: 'ao',  insp: true,  scr: genClock },
+    'minx':  { name: 'Megaminx',             group: 'wca', fmt: 'ao',  insp: true,  scr: genMinx },
+    'pyram': { name: 'Pyraminx',             group: 'wca', fmt: 'ao',  insp: true,  scr: genPyram },
+    'skewb': { name: 'Skewb',                group: 'wca', fmt: 'ao',  insp: true,  scr: genSkewb },
+    'sq1':   { name: 'Square-1',             group: 'wca', fmt: 'ao',  insp: true,  scr: () => genSq1(12 + rnd(3)) },
+    '444bf': { name: '4x4x4 bez patrzenia',  group: 'wca', fmt: 'mo3', insp: false, scr: gen444bf },
+    '555bf': { name: '5x5x5 bez patrzenia',  group: 'wca', fmt: 'mo3', insp: false, scr: gen555bf },
+    'fto':   { name: 'FTO',                  group: 'other', fmt: 'ao', insp: true, scr: () => genFTO(30) },
   };
   const GROUPS = { wca: 'Oficjalne konkurencje WCA', other: 'Nieoficjalne' };
 
-  // ---------- Formatting ----------
-  function fmt(ms, decimals = 2) {
-    if (ms == null || !isFinite(ms)) return 'DNF';
-    const total = Math.floor(ms);
-    const m = Math.floor(total / 60000);
-    const s = (total % 60000) / 1000;
-    const sStr = s.toFixed(decimals);
-    if (m > 0) return `${m}:${sStr.padStart(decimals + 3, '0')}`;
-    return sStr;
-  }
-
-  function effectiveMs(solve) {
-    if (solve.penalty === 'DNF') return Infinity;
-    if (solve.penalty === '+2') return solve.ms + 2000;
-    return solve.ms;
-  }
-
-  function fmtSolve(solve) {
-    if (solve.penalty === 'DNF') return 'DNF';
-    return fmt(effectiveMs(solve)) + (solve.penalty === '+2' ? '+' : '');
-  }
-
-  // ---------- Stats ----------
-  function average(solves) {
-    // WCA average: trim 5% from each end (1 for ao5/ao12, 5 for ao100), mean the rest.
-    const n = solves.length;
-    if (n < 3) return null;
-    const vals = solves.map(effectiveMs).sort((a, b) => a - b);
-    const trim = Math.ceil(n * 0.05);
-    const dnfs = vals.filter(v => v === Infinity).length;
-    if (dnfs > trim) return Infinity; // more DNFs than can be trimmed => average is DNF
-    const kept = vals.slice(trim, n - trim);
-    return kept.reduce((a, b) => a + b, 0) / kept.length;
-  }
-  function meanOf(solves) {
-    // WCA mean: any DNF => DNF.
-    const vals = solves.map(effectiveMs);
-    if (vals.includes(Infinity)) return Infinity;
-    return vals.reduce((a, b) => a + b, 0) / vals.length;
-  }
-  function lastN(solves, n, f) {
-    if (solves.length < n) return null;
-    return f(solves.slice(-n));
-  }
-  function bestN(solves, n, f) {
-    if (solves.length < n) return null;
-    let best = null;
-    for (let i = 0; i + n <= solves.length; i++) {
-      const a = f(solves.slice(i, i + n));
-      if (a === null) continue;
-      if (best === null || a < best) best = a;
-    }
-    return best;
-  }
-  function mean(solves) {
-    const valid = solves.map(effectiveMs).filter(v => v !== Infinity);
-    if (!valid.length) return null;
-    return valid.reduce((a, b) => a + b, 0) / valid.length;
-  }
-  function bestSolve(list) {
-    const valid = list.filter(s => effectiveMs(s) !== Infinity);
-    if (!valid.length) return null;
-    return valid.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b);
-  }
-
-  // ---------- State ----------
-  const STORAGE_KEY = 'cubeTimer.v1';
-  let state = { sessions: {}, cubeType: '333', inspection: false, hideTime: false };
+  // =====================================================================
+  //  State: named sessions, each with its own event and solves
+  // =====================================================================
+  const STORAGE_KEY = 'cubeTimer.v2';
+  const LEGACY_KEY = 'cubeTimer.v1';
+  const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, precision: 3 };
 
   function load() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const parsed = JSON.parse(raw);
-        state = Object.assign(state, parsed);
-        state.sessions = parsed.sessions || {};
+        state = Object.assign(state, JSON.parse(raw));
+      } else {
+        const old = localStorage.getItem(LEGACY_KEY);
+        if (old) {
+          const v1 = JSON.parse(old);
+          state.inspection = !!v1.inspection; state.hideTime = !!v1.hideTime;
+          for (const [ev, solves] of Object.entries(v1.sessions || {})) {
+            if (EVENTS[ev] && solves.length) state.sessions.push({ id: uid(), name: EVENTS[ev].name, event: ev, solves });
+          }
+          if (state.sessions.length) state.current = (state.sessions.find(s => s.event === v1.cubeType) || state.sessions[0]).id;
+        }
       }
     } catch (e) { /* ignore corrupt storage */ }
-    if (!EVENTS[state.cubeType]) state.cubeType = '333';
+    if (!Array.isArray(state.sessions)) state.sessions = [];
+    state.sessions = state.sessions.filter(s => s && EVENTS[s.event] && Array.isArray(s.solves));
+    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Default Session', event: '333', solves: [] });
+    if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
+    state.precision = state.precision === 2 ? 2 : 3;
+    if (typeof state.showImage !== 'boolean') state.showImage = true;
   }
-  function save() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota etc. */ }
-  }
-  function solves() { return state.sessions[state.cubeType] || (state.sessions[state.cubeType] = []); }
-  function event() { return EVENTS[state.cubeType]; }
-  function inspectionActive() { return state.inspection && event().insp; }
+  function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota */ } }
+  const session = () => state.sessions.find(s => s.id === state.current);
+  const solves = () => session().solves;
+  const event = () => EVENTS[session().event];
+  const inspectionActive = () => state.inspection && event().insp;
 
-  // ---------- DOM ----------
+  // =====================================================================
+  //  Formatting & statistics
+  // =====================================================================
+  function fmt(ms, decimals = state.precision) {
+    if (ms == null || !isFinite(ms)) return 'DNF';
+    const total = Math.floor(ms);
+    const m = Math.floor(total / 60000);
+    const s = (total % 60000) / 1000;
+    const sStr = s.toFixed(decimals);
+    return m > 0 ? `${m}:${sStr.padStart(decimals + 3, '0')}` : sStr;
+  }
+  function effectiveMs(solve) {
+    if (solve.penalty === 'DNF') return Infinity;
+    if (solve.penalty === '+2') return solve.ms + 2000;
+    return solve.ms;
+  }
+  function fmtSolve(solve) {
+    if (solve.penalty === 'DNF') return 'DNF';
+    return fmt(effectiveMs(solve)) + (solve.penalty === '+2' ? '+' : '');
+  }
+  function average(list) {
+    const n = list.length;
+    if (n < 3) return null;
+    const vals = list.map(effectiveMs).sort((a, b) => a - b);
+    const trim = Math.ceil(n * 0.05);
+    if (vals.filter(v => v === Infinity).length > trim) return Infinity;
+    const kept = vals.slice(trim, n - trim);
+    return kept.reduce((a, b) => a + b, 0) / kept.length;
+  }
+  function meanOf(list) {
+    const vals = list.map(effectiveMs);
+    if (vals.includes(Infinity)) return Infinity;
+    return vals.reduce((a, b) => a + b, 0) / vals.length;
+  }
+  const lastN = (list, n, f) => list.length < n ? null : f(list.slice(-n));
+  function bestN(list, n, f) {
+    if (list.length < n) return null;
+    let best = null;
+    for (let i = 0; i + n <= list.length; i++) {
+      const a = f(list.slice(i, i + n));
+      if (a !== null && (best === null || a < best)) best = a;
+    }
+    return best;
+  }
+  function mean(list) {
+    const valid = list.map(effectiveMs).filter(v => v !== Infinity);
+    return valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : null;
+  }
+  function bestSolve(list) {
+    const valid = list.filter(s => effectiveMs(s) !== Infinity);
+    return valid.length ? valid.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b) : null;
+  }
+  function worstSolve(list) {
+    const valid = list.filter(s => effectiveMs(s) !== Infinity);
+    return valid.length ? valid.reduce((a, b) => effectiveMs(a) > effectiveMs(b) ? a : b) : null;
+  }
+  const dash = v => v == null ? '–' : fmt(v);
+
+  // =====================================================================
+  //  DOM
+  // =====================================================================
   const $ = id => document.getElementById(id);
   const el = {
-    main: $('main'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
-    penaltyBar: $('penaltyBar'), timesList: $('timesList'), cubeType: $('cubeType'),
-    optInspection: $('optInspection'), inspWrap: $('inspWrap'), optHideTime: $('optHideTime'),
-    stats: $('stats'),
-    modalBg: $('modalBg'), mTitle: $('mTitle'), mTime: $('mTime'), mScramble: $('mScramble'), mControls: $('mControls'),
+    viewTimer: $('view-timer'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
+    penaltyBar: $('penaltyBar'), cards: $('cards'), imgCard: $('imgCard'), scrImg: $('scrImg'), miniStats: $('miniStats'),
+    sessionName: $('sessionName'), eventSel: $('eventSel'),
+    timesMobile: $('timesMobile'), timesSide: $('timesSide'), statsFull: $('statsFull'),
+    chart: $('chart'), chartLegend: $('chartLegend'), chartTip: $('chartTip'), chartWrap: $('chartWrap'),
+    optInspection: $('optInspection'), inspRow: $('inspRow'), optHideTime: $('optHideTime'), optImage: $('optImage'), optPrecision: $('optPrecision'),
+    modalBg: $('modalBg'), sheet: $('sheet'), tabs: $('tabs'),
   };
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  // Fill the event selector, grouped.
   for (const [gid, gname] of Object.entries(GROUPS)) {
     const og = document.createElement('optgroup');
     og.label = gname;
@@ -504,98 +1138,71 @@
       o.value = id; o.textContent = ev.name;
       og.appendChild(o);
     }
-    el.cubeType.appendChild(og);
+    el.eventSel.appendChild(og);
   }
 
-  // ---------- Timer machine ----------
-  // States: idle -> holding -> ready -> running -> idle
-  //         idle -> (inspection) inspecting -> inspHolding -> inspReady -> running
-  const HOLD_MS = 500;
-  const INSPECTION_MS = 15000;
+  // ---- tabs ----
+  let activeTab = 'timer';
+  function setTab(name) {
+    activeTab = name;
+    for (const b of el.tabs.querySelectorAll('button')) b.classList.toggle('active', b.dataset.tab === name);
+    for (const v of document.querySelectorAll('.view')) v.hidden = v.id !== 'view-' + name;
+    if (name === 'stats') renderStats();
+  }
+  el.tabs.addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) setTab(b.dataset.tab); });
 
-  let phase = 'idle';
-  let holdTimer = null;
-  let startTime = 0;
-  let rafId = null;
-  let inspectionStart = 0;
-  let inspectionPenalty = null; // null | '+2' | 'DNF'
-  let currentScramble = '';
-  let lastSolveId = null;
+  // =====================================================================
+  //  Timer state machine
+  // =====================================================================
+  const HOLD_MS = 500, INSPECTION_MS = 15000;
+  let phase = 'idle', holdTimer = null, startTime = 0, rafId = null, inspectionStart = 0, inspectionPenalty = null;
+  let currentScramble = '', lastSolveId = null;
 
+  const zero = () => fmt(0);
   function idleHint() {
-    const ev = event();
-    if (!ev.insp) return 'Bez inspekcji: zapamiętywanie liczy się do czasu. Przytrzymaj <b>spację</b> (lub dotknij ekran), aż timer zrobi się zielony, potem puść, aby wystartować.';
-    return 'Przytrzymaj <b>spację</b> (lub dotknij ekran), aż timer zrobi się zielony, potem puść, aby wystartować.';
+    if (!event().insp) return 'Bez inspekcji: zapamiętywanie liczy się do czasu. Przytrzymaj spację lub ekran, aż timer zrobi się zielony, potem puść.';
+    return 'Przytrzymaj spację lub ekran, aż timer zrobi się zielony, potem puść, aby wystartować.';
   }
-
   function setPhase(p) {
     phase = p;
-    el.main.classList.toggle('holding', p === 'holding' || p === 'inspHolding');
-    el.main.classList.toggle('ready', p === 'ready' || p === 'inspReady');
-    el.main.classList.toggle('inspecting', p === 'inspecting' || p === 'inspHolding' || p === 'inspReady');
+    el.viewTimer.classList.toggle('holding', p === 'holding' || p === 'inspHolding');
+    el.viewTimer.classList.toggle('ready', p === 'ready' || p === 'inspReady');
+    el.viewTimer.classList.toggle('inspecting', p.startsWith('insp'));
     el.scramble.classList.toggle('hidden-during-solve', p === 'running');
-    if (p === 'running') {
-      el.hint.textContent = 'Naciśnij dowolny klawisz, aby zatrzymać.';
-      el.penaltyBar.innerHTML = '';
-    } else if (p === 'inspecting') {
-      el.hint.textContent = 'Inspekcja. Przytrzymaj spację, aby wystartować.';
-    } else if (p === 'idle') {
-      el.hint.innerHTML = idleHint();
-    }
+    el.cards.style.visibility = p === 'running' ? 'hidden' : '';
+    if (p === 'running') { el.hint.textContent = 'Dotknij lub naciśnij dowolny klawisz, aby zatrzymać.'; el.penaltyBar.innerHTML = ''; }
+    else if (p === 'inspecting') el.hint.textContent = 'Inspekcja. Przytrzymaj, aby wystartować.';
+    else if (p === 'idle') el.hint.textContent = idleHint();
   }
-
   function newScramble() {
     currentScramble = event().scr();
     el.scramble.textContent = currentScramble;
     el.scramble.classList.toggle('multi', currentScramble.includes('\n'));
     el.scramble.classList.toggle('long', !currentScramble.includes('\n') && currentScramble.length > 130);
+    renderImage();
   }
-
+  function renderImage() {
+    el.imgCard.hidden = !state.showImage;
+    el.cards.classList.toggle('no-image', !state.showImage);
+    el.scrImg.innerHTML = state.showImage ? scrambleSvg(session().event, currentScramble) : '';
+  }
   function tick() {
     if (phase === 'running') {
-      const elapsed = performance.now() - startTime;
-      el.timer.textContent = state.hideTime ? '···' : fmt(elapsed, 1);
+      el.timer.textContent = state.hideTime ? '···' : fmt(performance.now() - startTime);
       rafId = requestAnimationFrame(tick);
-    } else if (phase === 'inspecting' || phase === 'inspHolding' || phase === 'inspReady') {
-      const elapsed = performance.now() - inspectionStart;
-      const left = INSPECTION_MS - elapsed;
-      if (left > -2000) {
-        el.timer.textContent = left > 0 ? Math.ceil(left / 1000) : '+2';
-        inspectionPenalty = left > 0 ? null : '+2';
-      } else {
-        el.timer.textContent = 'DNF';
-        inspectionPenalty = 'DNF';
-      }
+    } else if (phase.startsWith('insp')) {
+      const left = INSPECTION_MS - (performance.now() - inspectionStart);
+      if (left > -2000) { el.timer.textContent = left > 0 ? Math.ceil(left / 1000) : '+2'; inspectionPenalty = left > 0 ? null : '+2'; }
+      else { el.timer.textContent = 'DNF'; inspectionPenalty = 'DNF'; }
       rafId = requestAnimationFrame(tick);
     }
   }
-
-  function startInspection() {
-    inspectionStart = performance.now();
-    inspectionPenalty = null;
-    setPhase('inspecting');
-    cancelAnimationFrame(rafId);
-    tick();
-  }
-
-  function startRunning() {
-    startTime = performance.now();
-    setPhase('running');
-    cancelAnimationFrame(rafId);
-    tick();
-  }
-
+  function startInspection() { inspectionStart = performance.now(); inspectionPenalty = null; setPhase('inspecting'); cancelAnimationFrame(rafId); tick(); }
+  function startRunning() { startTime = performance.now(); setPhase('running'); cancelAnimationFrame(rafId); tick(); }
   function stopRunning() {
-    const endTime = performance.now();
+    const ms = performance.now() - startTime;
     cancelAnimationFrame(rafId);
-    const ms = endTime - startTime;
-    const solve = {
-      id: Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-      ms: Math.round(ms),
-      penalty: inspectionPenalty,
-      scramble: currentScramble,
-      date: new Date().toISOString(),
-    };
+    const solve = { id: uid(), ms: Math.round(ms), penalty: inspectionPenalty, scramble: currentScramble, date: new Date().toISOString() };
     solves().push(solve);
     lastSolveId = solve.id;
     save();
@@ -605,239 +1212,344 @@
     render();
     newScramble();
   }
-
-  // Controls for one solve: OK / +2 / DNF.
-  function resultControls(solve, onChange) {
+  function penaltyButtons(solve, onChange) {
     const frag = document.createDocumentFragment();
-    const mk = (label, pen) => {
+    for (const [label, pen] of [['OK', null], ['+2', '+2'], ['DNF', 'DNF']]) {
       const b = document.createElement('button');
-      b.className = 'small';
       b.textContent = label;
       if (solve.penalty === pen) b.classList.add('primary');
       b.addEventListener('click', e => { e.stopPropagation(); setPenalty(solve.id, pen); onChange && onChange(); });
-      return b;
-    };
-    frag.append(mk('OK', null), mk('+2', '+2'), mk('DNF', 'DNF'));
+      frag.append(b);
+    }
     return frag;
   }
-
   function renderPenaltyBar(solve) {
     el.penaltyBar.innerHTML = '';
-    el.penaltyBar.append(resultControls(solve, () => {
-      const s = solves().find(x => x.id === solve.id);
-      if (s) renderPenaltyBar(s);
-    }));
+    el.penaltyBar.append(penaltyButtons(solve, () => { const s = solves().find(x => x.id === solve.id); if (s) renderPenaltyBar(s); }));
     const del = document.createElement('button');
-    del.className = 'small danger';
-    del.textContent = 'Usuń';
+    del.className = 'danger'; del.textContent = 'Usuń';
     del.addEventListener('click', e => { e.stopPropagation(); deleteSolve(solve.id); });
     el.penaltyBar.append(del);
   }
-
   function setPenalty(id, pen) {
     const s = solves().find(x => x.id === id);
     if (!s) return;
-    s.penalty = pen;
-    save();
+    s.penalty = pen; save();
     if (id === lastSolveId && phase === 'idle') el.timer.textContent = fmtSolve(s);
     render();
   }
-
   function deleteSolve(id) {
-    const list = solves();
-    const idx = list.findIndex(x => x.id === id);
+    const list = solves(), idx = list.findIndex(x => x.id === id);
     if (idx < 0) return;
-    list.splice(idx, 1);
-    save();
-    if (id === lastSolveId) {
-      lastSolveId = null;
-      el.timer.textContent = '0.00';
-      el.penaltyBar.innerHTML = '';
-    }
-    closeModal();
-    render();
+    list.splice(idx, 1); save();
+    if (id === lastSolveId) resetDisplay();
+    closeSheet(); render();
   }
+  function resetDisplay() { lastSolveId = null; el.timer.textContent = zero(); el.penaltyBar.innerHTML = ''; }
 
-  // ---------- Input handling ----------
+  // ---- input ----
   function press() {
-    if (el.modalBg.classList.contains('open')) return;
+    if (el.modalBg.classList.contains('open') || activeTab !== 'timer') return;
     if (phase === 'running') { stopRunning(); return; }
-    if (phase === 'idle') {
-      if (inspectionActive()) { startInspection(); return; }
-      beginHold('holding', 'ready');
-    } else if (phase === 'inspecting') {
-      beginHold('inspHolding', 'inspReady');
-    }
+    if (phase === 'idle') { if (inspectionActive()) startInspection(); else beginHold('holding', 'ready'); }
+    else if (phase === 'inspecting') beginHold('inspHolding', 'inspReady');
   }
-
   function beginHold(holdPhase, readyPhase) {
     setPhase(holdPhase);
-    if (holdPhase === 'holding') el.timer.textContent = '0.00';
+    if (holdPhase === 'holding') el.timer.textContent = zero();
     clearTimeout(holdTimer);
     holdTimer = setTimeout(() => { if (phase === holdPhase) setPhase(readyPhase); }, HOLD_MS);
   }
-
   function release() {
     clearTimeout(holdTimer);
-    if (phase === 'ready' || phase === 'inspReady') {
-      startRunning();
-    } else if (phase === 'holding') {
+    if (phase === 'ready' || phase === 'inspReady') startRunning();
+    else if (phase === 'holding') {
       setPhase('idle');
-      if (lastSolveId) {
-        const s = solves().find(x => x.id === lastSolveId);
-        if (s) el.timer.textContent = fmtSolve(s);
-      }
-    } else if (phase === 'inspHolding') {
-      setPhase('inspecting');
-    }
+      const s = lastSolveId && solves().find(x => x.id === lastSolveId);
+      if (s) el.timer.textContent = fmtSolve(s);
+    } else if (phase === 'inspHolding') setPhase('inspecting');
   }
-
   let spaceDown = false;
   document.addEventListener('keydown', e => {
     if (e.repeat) return;
+    if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
     if (phase === 'running') { e.preventDefault(); stopRunning(); return; }
-    if (e.code === 'Space') { e.preventDefault(); spaceDown = true; press(); }
+    if (e.code === 'Space') { if (activeTab === 'timer' && !el.modalBg.classList.contains('open')) { e.preventDefault(); spaceDown = true; press(); } }
     else if (e.code === 'Escape') {
-      if (el.modalBg.classList.contains('open')) closeModal();
-      else if (phase.startsWith('insp')) { cancelAnimationFrame(rafId); setPhase('idle'); el.timer.textContent = '0.00'; }
+      if (el.modalBg.classList.contains('open')) closeSheet();
+      else if (phase.startsWith('insp')) { cancelAnimationFrame(rafId); setPhase('idle'); el.timer.textContent = zero(); }
     }
-    else if (e.key === 'n' || e.key === 'N') newScramble();
+    else if ((e.key === 'n' || e.key === 'N') && activeTab === 'timer') newScramble();
   });
-  document.addEventListener('keyup', e => {
-    if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); }
-  });
-
-  // Touch / mouse on the main area (mobile support).
+  document.addEventListener('keyup', e => { if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); } });
   let pointerDown = false;
-  el.main.addEventListener('pointerdown', e => {
-    if (e.target.closest('button, select, label, input, .topbar, .scramble')) return;
-    e.preventDefault();
-    pointerDown = true;
-    press();
+  el.viewTimer.addEventListener('pointerdown', e => {
+    if (phase !== 'running' && e.target.closest('.cards, button, select, input, a, label')) return;
+    e.preventDefault(); pointerDown = true; press();
   });
   const pointerUp = () => { if (pointerDown) { pointerDown = false; release(); } };
-  el.main.addEventListener('pointerup', pointerUp);
-  el.main.addEventListener('pointercancel', pointerUp);
-  el.main.addEventListener('pointerleave', pointerUp);
+  el.viewTimer.addEventListener('pointerup', pointerUp);
+  el.viewTimer.addEventListener('pointercancel', pointerUp);
+  el.viewTimer.addEventListener('pointerleave', pointerUp);
 
-  // ---------- Rendering ----------
-  const dash = v => v == null ? '–' : fmt(v);
-
+  // =====================================================================
+  //  Rendering
+  // =====================================================================
+  function statTile(label, value) {
+    const dnf = value === 'DNF';
+    return `<div class="stat"><div class="l">${label}</div><div class="v${dnf ? ' dnf' : ''}">${value}</div></div>`;
+  }
   function render() {
-    const list = solves();
-    const n = list.length;
-    const ev = event();
-    const best = bestSolve(list);
+    const list = solves(), ev = event(), best = bestSolve(list);
+    el.sessionName.textContent = session().name;
+    el.eventSel.value = session().event;
+    document.title = `${session().name} · ${ev.name} · Cube Timer`;
 
-    const rows = [['Liczba ułożeń', n], ['Najlepszy', best ? fmtSolve(best) : '–']];
     if (ev.fmt === 'ao') {
-      rows.push(['Średnia (wszystkie)', dash(mean(list))]);
-      rows.push(['ao5', dash(lastN(list, 5, average))], ['ao12', dash(lastN(list, 12, average))], ['ao100', dash(lastN(list, 100, average))]);
-      rows.push(['Najlepsze ao5', dash(bestN(list, 5, average))], ['Najlepsze ao12', dash(bestN(list, 12, average))]);
+      el.miniStats.innerHTML = statTile('ao5', dash(lastN(list, 5, average))) + statTile('ao12', dash(lastN(list, 12, average)))
+        + '<div class="divider"></div>' + statTile('ao100', dash(lastN(list, 100, average))) + statTile('mean', dash(mean(list)));
     } else {
-      rows.push(['Średnia (wszystkie)', dash(mean(list))]);
-      rows.push(['mo3', dash(lastN(list, 3, meanOf))], ['Najlepsze mo3', dash(bestN(list, 3, meanOf))]);
-      rows.push(['ao5', dash(lastN(list, 5, average))], ['ao12', dash(lastN(list, 12, average))]);
+      el.miniStats.innerHTML = statTile('mo3', dash(lastN(list, 3, meanOf))) + statTile('ao5', dash(lastN(list, 5, average)))
+        + '<div class="divider"></div>' + statTile('best', best ? fmtSolve(best) : '–') + statTile('mean', dash(mean(list)));
     }
-    el.stats.innerHTML = rows.map(([l, v]) => `<span class="label">${l}</span><span class="value">${v}</span>`).join('');
 
-    if (!n) {
-      el.timesList.innerHTML = '<div class="empty">Brak ułożeń w tej sesji.<br>Zacznij układać!</div>';
-      return;
-    }
-    const trs = [];
-    for (let i = n - 1; i >= 0; i--) {
-      const s = list[i];
-      const isBest = best && s.id === best.id;
-      let extra = '';
-      if (ev.fmt === 'ao') {
-        const a5 = i >= 4 ? average(list.slice(i - 4, i + 1)) : null;
-        const a12 = i >= 11 ? average(list.slice(i - 11, i + 1)) : null;
-        extra = `<td class="time">${a5 == null ? '' : fmt(a5)}</td><td class="time">${a12 == null ? '' : fmt(a12)}</td>`;
-      } else {
-        const m3 = i >= 2 ? meanOf(list.slice(i - 2, i + 1)) : null;
-        extra = `<td class="time">${m3 == null ? '' : fmt(m3)}</td>`;
+    let html;
+    if (!list.length) html = '<div class="empty">Brak ułożeń w tej sesji.<br>Zacznij układać!</div>';
+    else {
+      const rows = [];
+      for (let i = list.length - 1; i >= 0; i--) {
+        const s = list[i];
+        let extra;
+        if (ev.fmt === 'ao') {
+          const a5 = i >= 4 ? average(list.slice(i - 4, i + 1)) : null, a12 = i >= 11 ? average(list.slice(i - 11, i + 1)) : null;
+          extra = `<td class="time">${a5 == null ? '' : fmt(a5)}</td><td class="time">${a12 == null ? '' : fmt(a12)}</td>`;
+        } else {
+          const m3 = i >= 2 ? meanOf(list.slice(i - 2, i + 1)) : null;
+          extra = `<td class="time">${m3 == null ? '' : fmt(m3)}</td>`;
+        }
+        rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${best && s.id === best.id ? ' best' : ''}">${fmtSolve(s)}</td>${extra}</tr>`);
       }
-      trs.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${isBest ? ' best' : ''}">${fmtSolve(s)}</td>${extra}</tr>`);
+      const head = ev.fmt === 'ao' ? '<th>czas</th><th>ao5</th><th>ao12</th>' : '<th>czas</th><th>mo3</th>';
+      html = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
-    const head = ev.fmt === 'ao' ? '<th>czas</th><th>ao5</th><th>ao12</th>' : '<th>czas</th><th>mo3</th>';
-    el.timesList.innerHTML = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${trs.join('')}</tbody></table>`;
+    el.timesMobile.innerHTML = html;
+    el.timesSide.innerHTML = html;
+    if (activeTab === 'stats') renderStats();
+  }
+  for (const c of [el.timesMobile, el.timesSide]) c.addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openSolve(tr.dataset.id); });
+
+  function statRow(label, value, sub) {
+    const dnf = value === 'DNF';
+    return `<div class="row"><div>${label}${sub ? `<div class="sub">${sub}</div>` : ''}</div><div class="value${dnf ? ' dnf' : ''}">${value}</div></div>`;
+  }
+  function renderStats() {
+    const list = solves(), ev = event(), best = bestSolve(list), worst = worstSolve(list);
+    const rows = [
+      statRow('Liczba ułożeń', list.length, list.filter(s => s.penalty === 'DNF').length ? `${list.filter(s => s.penalty === 'DNF').length} DNF` : ''),
+      statRow('Najlepszy', best ? fmtSolve(best) : '–'), statRow('Najgorszy', worst ? fmtSolve(worst) : '–'),
+      statRow('Średnia (wszystkie)', dash(mean(list))),
+    ];
+    if (ev.fmt === 'mo3') rows.push(statRow('mo3', dash(lastN(list, 3, meanOf)), 'aktualne'), statRow('Najlepsze mo3', dash(bestN(list, 3, meanOf))));
+    rows.push(statRow('ao5', dash(lastN(list, 5, average)), 'aktualne'), statRow('Najlepsze ao5', dash(bestN(list, 5, average))),
+      statRow('ao12', dash(lastN(list, 12, average)), 'aktualne'), statRow('Najlepsze ao12', dash(bestN(list, 12, average))),
+      statRow('ao100', dash(lastN(list, 100, average)), 'aktualne'), statRow('Najlepsze ao100', dash(bestN(list, 100, average))));
+    el.statsFull.innerHTML = rows.join('');
+    renderChart(list);
   }
 
-  el.timesList.addEventListener('click', e => {
-    const tr = e.target.closest('tr[data-id]');
-    if (tr) openModal(tr.dataset.id);
+  // ---- chart: solve times with a running ao12 ----
+  const CH = { w: 600, h: 220, l: 52, r: 12, t: 12, b: 26 };
+  let chartPts = [];
+  function renderChart(list) {
+    const svg = el.chart;
+    const pts = list.map((s, i) => ({ i, v: effectiveMs(s), s }));
+    const valid = pts.filter(p => isFinite(p.v));
+    el.chartLegend.innerHTML = '<span><i style="background:#4f8cff"></i>czas</span><span><i style="background:#c97a1c"></i>ao12</span>';
+    if (valid.length < 2) { svg.innerHTML = `<text x="${CH.w / 2}" y="${CH.h / 2}" fill="#8e8e93" font-size="13" text-anchor="middle" font-family="inherit">Wykres pojawi się po dwóch ułożeniach</text>`; chartPts = []; return; }
+    const ys = valid.map(p => p.v);
+    let lo = Math.min(...ys), hi = Math.max(...ys);
+    if (hi === lo) { hi += 500; lo -= 500; }
+    const pad = (hi - lo) * 0.08; lo -= pad; hi += pad; if (lo < 0) lo = 0;
+    const X = i => CH.l + (list.length === 1 ? 0 : i / (list.length - 1)) * (CH.w - CH.l - CH.r);
+    const Y = v => CH.t + (1 - (v - lo) / (hi - lo)) * (CH.h - CH.t - CH.b);
+    let g = '';
+    for (let k = 0; k <= 4; k++) {
+      const v = lo + (hi - lo) * k / 4, y = Y(v);
+      g += `<line x1="${CH.l}" x2="${CH.w - CH.r}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#2c2c2e" stroke-width="1"/>`;
+      g += `<text x="${CH.l - 8}" y="${(y + 4).toFixed(1)}" fill="#8e8e93" font-size="11" text-anchor="end" font-family="JetBrains Mono, monospace">${fmt(v, 2)}</text>`;
+    }
+    g += `<text x="${CH.l}" y="${CH.h - 8}" fill="#8e8e93" font-size="11" font-family="inherit">1</text><text x="${CH.w - CH.r}" y="${CH.h - 8}" fill="#8e8e93" font-size="11" text-anchor="end" font-family="inherit">${list.length}</text>`;
+    // time line with gaps at DNF
+    let d = '', pen = false;
+    for (const p of pts) { if (!isFinite(p.v)) { pen = false; continue; } d += (pen ? 'L' : 'M') + X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1); pen = true; }
+    g += `<path d="${d}" fill="none" stroke="#4f8cff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+    if (list.length <= 60) for (const p of valid) g += `<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3" fill="#4f8cff" stroke="#1c1c1e" stroke-width="2"/>`;
+    // ao12
+    let d2 = ''; pen = false;
+    for (let i = 11; i < list.length; i++) {
+      const a = average(list.slice(i - 11, i + 1));
+      if (!isFinite(a)) { pen = false; continue; }
+      d2 += (pen ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(a).toFixed(1); pen = true;
+    }
+    if (d2) g += `<path d="${d2}" fill="none" stroke="#c97a1c" stroke-width="2" stroke-linejoin="round"/>`;
+    for (const p of pts) if (!isFinite(p.v)) g += `<text x="${X(p.i).toFixed(1)}" y="${CH.h - CH.b + 14}" fill="#ff5c5c" font-size="9" text-anchor="middle" font-family="inherit">DNF</text>`;
+    g += `<g id="chartCursor" style="display:none"><line id="chartCursorLine" y1="${CH.t}" y2="${CH.h - CH.b}" stroke="#8e8e93" stroke-width="1" stroke-dasharray="3 3"/><circle id="chartCursorDot" r="5" fill="#4f8cff" stroke="#fff" stroke-width="2"/></g>`;
+    svg.innerHTML = g;
+    chartPts = pts.map(p => ({ x: X(p.i), y: isFinite(p.v) ? Y(p.v) : null, s: p.s, i: p.i }));
+  }
+  function chartHover(e) {
+    if (!chartPts.length) return;
+    const rect = el.chart.getBoundingClientRect();
+    const px = (e.clientX - rect.left) / rect.width * CH.w;
+    let best = chartPts[0];
+    for (const p of chartPts) if (Math.abs(p.x - px) < Math.abs(best.x - px)) best = p;
+    const cur = $('chartCursor');
+    if (!cur) return;
+    cur.style.display = '';
+    const line = $('chartCursorLine'); line.setAttribute('x1', best.x); line.setAttribute('x2', best.x);
+    const dot = $('chartCursorDot');
+    if (best.y != null) { dot.style.display = ''; dot.setAttribute('cx', best.x); dot.setAttribute('cy', best.y); } else dot.style.display = 'none';
+    const tip = el.chartTip;
+    tip.style.display = 'block';
+    tip.textContent = `#${best.i + 1}  ${fmtSolve(best.s)}`;
+    const wrapRect = el.chartWrap.getBoundingClientRect();
+    tip.style.left = (rect.left - wrapRect.left + best.x / CH.w * rect.width) + 'px';
+    tip.style.top = (rect.top - wrapRect.top + (best.y != null ? best.y : CH.h / 2) / CH.h * rect.height) + 'px';
+  }
+  el.chart.addEventListener('pointermove', chartHover);
+  el.chart.addEventListener('pointerleave', () => { el.chartTip.style.display = 'none'; const c = $('chartCursor'); if (c) c.style.display = 'none'; });
+  el.chart.addEventListener('click', e => {
+    if (!chartPts.length) return;
+    const rect = el.chart.getBoundingClientRect(), px = (e.clientX - rect.left) / rect.width * CH.w;
+    let best = chartPts[0];
+    for (const p of chartPts) if (Math.abs(p.x - px) < Math.abs(best.x - px)) best = p;
+    openSolve(best.s.id);
   });
 
-  // ---------- Modal ----------
-  let modalId = null;
-  function openModal(id) {
+  // =====================================================================
+  //  Sheets (bottom modal)
+  // =====================================================================
+  function openSheet(html) { el.sheet.innerHTML = '<div class="grab"></div>' + html; el.modalBg.classList.add('open'); }
+  function closeSheet() { el.modalBg.classList.remove('open'); el.sheet.innerHTML = ''; }
+  el.modalBg.addEventListener('click', e => { if (e.target === el.modalBg) closeSheet(); });
+
+  function openSolve(id) {
     const s = solves().find(x => x.id === id);
     if (!s) return;
-    modalId = id;
     const idx = solves().indexOf(s) + 1;
-    el.mTitle.textContent = `Ułożenie #${idx} · ${new Date(s.date).toLocaleString('pl-PL')}`;
-    el.mTime.textContent = fmtSolve(s);
-    el.mScramble.textContent = s.scramble;
-    el.mControls.innerHTML = '';
-    el.mControls.append(resultControls(s, () => openModal(id)));
-    el.modalBg.classList.add('open');
+    openSheet(`<h2>Ułożenie #${idx} · ${new Date(s.date).toLocaleString('pl-PL')}</h2>
+      <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
+      <div class="scr">${esc(s.scramble)}</div>
+      <div class="preview">${state.showImage ? scrambleSvg(session().event, s.scramble) : ''}</div>
+      <div class="actions" id="solveActions"></div>`);
+    const actions = $('solveActions');
+    actions.append(penaltyButtons(s, () => openSolve(id)));
+    const del = document.createElement('button'); del.className = 'danger'; del.textContent = 'Usuń';
+    del.addEventListener('click', () => { if (confirm('Usunąć to ułożenie?')) deleteSolve(id); });
+    const close = document.createElement('button'); close.className = 'primary'; close.textContent = 'Zamknij';
+    close.addEventListener('click', closeSheet);
+    actions.append(del, close);
   }
-  function closeModal() { el.modalBg.classList.remove('open'); modalId = null; }
-  $('mDelete').addEventListener('click', () => { if (confirm('Usunąć to ułożenie?')) deleteSolve(modalId); });
-  $('mClose').addEventListener('click', closeModal);
-  el.modalBg.addEventListener('click', e => { if (e.target === el.modalBg) closeModal(); });
 
-  // ---------- Controls ----------
+  const ICON_EDIT = '<svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg>';
+  const ICON_TRASH = '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>';
+  function openSessions() {
+    const rows = state.sessions.map(s => `<div class="row${s.id === state.current ? ' current' : ''}" data-id="${s.id}">
+        <div><div class="name">${esc(s.name)}</div><div class="sub">${EVENTS[s.event].name} · ${s.solves.length} ułożeń</div></div>
+        <div class="tools"><button data-act="rename" title="Zmień nazwę">${ICON_EDIT}</button><button data-act="delete" title="Usuń sesję">${ICON_TRASH}</button></div>
+      </div>`).join('');
+    openSheet(`<h2>Sesje</h2><div class="list">${rows}</div><div class="actions" style="margin-top:14px"><button class="primary" id="btnNewSession">Nowa sesja</button></div>`);
+    $('btnNewSession').addEventListener('click', () => {
+      const name = prompt('Nazwa nowej sesji:', `Sesja ${state.sessions.length + 1}`);
+      if (name === null) return;
+      const s = { id: uid(), name: name.trim() || `Sesja ${state.sessions.length + 1}`, event: session().event, solves: [] };
+      state.sessions.push(s);
+      switchSession(s.id);
+      closeSheet();
+    });
+    el.sheet.querySelector('.list').addEventListener('click', e => {
+      const row = e.target.closest('.row[data-id]'); if (!row) return;
+      const id = row.dataset.id, act = e.target.closest('button[data-act]')?.dataset.act;
+      if (act === 'rename') { renameSession(id); openSessions(); }
+      else if (act === 'delete') { if (deleteSession(id)) openSessions(); }
+      else { switchSession(id); closeSheet(); }
+    });
+  }
+  function switchSession(id) {
+    if (!state.sessions.some(s => s.id === id)) return;
+    if (phase.startsWith('insp')) { cancelAnimationFrame(rafId); }
+    state.current = id; resetDisplay(); setPhase('idle'); applyEventUI(); save(); render(); newScramble();
+  }
+  function renameSession(id) {
+    const s = state.sessions.find(x => x.id === id); if (!s) return;
+    const name = prompt('Nazwa sesji:', s.name);
+    if (name === null || !name.trim()) return;
+    s.name = name.trim(); save(); render();
+  }
+  function deleteSession(id) {
+    const s = state.sessions.find(x => x.id === id); if (!s) return false;
+    if (!confirm(`Usunąć sesję „${s.name}” (${s.solves.length} ułożeń)?`)) return false;
+    state.sessions = state.sessions.filter(x => x.id !== id);
+    if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Default Session', event: s.event, solves: [] });
+    if (state.current === id) switchSession(state.sessions[0].id); else { save(); render(); }
+    return true;
+  }
+  $('sessionBtn').addEventListener('click', openSessions);
+  $('btnRename').addEventListener('click', () => renameSession(state.current));
+
+  el.imgCard.addEventListener('click', () => {
+    if (!currentScramble) return;
+    openSheet(`<h2>${esc(event().name)}</h2><div class="scr">${esc(currentScramble)}</div><div class="zoom">${scrambleSvg(session().event, currentScramble)}</div>`);
+  });
+
+  // ---- controls ----
   function applyEventUI() {
     const ev = event();
-    el.inspWrap.classList.toggle('disabled', !ev.insp);
     el.optInspection.disabled = !ev.insp;
     el.optInspection.checked = !!state.inspection && ev.insp;
-    el.inspWrap.title = ev.insp ? '' : 'W tej konkurencji nie ma inspekcji';
+    el.inspRow.title = ev.insp ? '' : 'W tej konkurencji nie ma inspekcji';
   }
-  function resetDisplay() {
-    lastSolveId = null;
-    el.timer.textContent = '0.00';
-    el.penaltyBar.innerHTML = '';
-  }
-  el.cubeType.addEventListener('change', () => {
-    state.cubeType = el.cubeType.value;
-    resetDisplay();
-    applyEventUI();
-    save(); render(); newScramble(); setPhase('idle');
-    el.cubeType.blur();
+  el.eventSel.addEventListener('change', () => {
+    const ev = el.eventSel.value;
+    if (solves().length && !confirm(`Ta sesja ma już ${solves().length} ułożeń. Zmienić konkurencję na ${EVENTS[ev].name}?`)) { el.eventSel.value = session().event; el.eventSel.blur(); return; }
+    session().event = ev;
+    resetDisplay(); applyEventUI(); save(); render(); newScramble(); setPhase('idle');
+    el.eventSel.blur();
   });
-  el.optInspection.addEventListener('change', () => { state.inspection = el.optInspection.checked; save(); el.optInspection.blur(); });
-  el.optHideTime.addEventListener('change', () => { state.hideTime = el.optHideTime.checked; save(); el.optHideTime.blur(); });
-  $('btnNewScramble').addEventListener('click', e => { newScramble(); e.target.blur(); });
+  el.optInspection.addEventListener('change', () => { state.inspection = el.optInspection.checked; save(); });
+  el.optHideTime.addEventListener('change', () => { state.hideTime = el.optHideTime.checked; save(); });
+  el.optImage.addEventListener('change', () => { state.showImage = el.optImage.checked; save(); renderImage(); });
+  el.optPrecision.addEventListener('change', () => {
+    state.precision = +el.optPrecision.value; save();
+    const s = lastSolveId && solves().find(x => x.id === lastSolveId);
+    el.timer.textContent = s ? fmtSolve(s) : zero();
+    render();
+  });
   $('btnClear').addEventListener('click', () => {
     if (!solves().length) return;
-    if (confirm('Wyczyścić wszystkie czasy w tej sesji?')) {
-      state.sessions[state.cubeType] = [];
-      resetDisplay();
-      save(); render();
-    }
+    if (confirm(`Wyczyścić wszystkie czasy w sesji „${session().name}”?`)) { session().solves = []; resetDisplay(); save(); render(); }
   });
   $('btnExport').addEventListener('click', () => {
     const list = solves();
     if (!list.length) return;
-    const esc = v => `"${String(v).replace(/"/g, '""')}"`;
-    const lines = ['nr,czas_ms,kara,wynik,scramble,data'];
-    list.forEach((s, i) => lines.push([i + 1, s.ms, s.penalty || '', fmtSolve(s), esc(s.scramble), s.date].join(',')));
+    const q = v => `"${String(v).replace(/"/g, '""')}"`;
+    const lines = ['nr,czas_ms,kara,wynik,konkurencja,scramble,data'];
+    list.forEach((s, i) => lines.push([i + 1, s.ms, s.penalty || '', fmtSolve(s), session().event, q(s.scramble), s.date].join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `cube-timer-${state.cubeType}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `cube-timer-${session().name.replace(/[^\w-]+/g, '_')}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
 
-  // ---------- Init ----------
+  // ---- init ----
   load();
-  el.cubeType.value = state.cubeType;
   el.optHideTime.checked = !!state.hideTime;
+  el.optImage.checked = !!state.showImage;
+  el.optPrecision.value = String(state.precision);
   applyEventUI();
+  el.timer.textContent = zero();
   render();
   newScramble();
   setPhase('idle');
