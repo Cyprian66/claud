@@ -5,12 +5,12 @@ Wystarczy otworzyć `index.html` w przeglądarce, na komputerze lub telefonie.
 
 ## Układ (wersja na komputer)
 
-Układ w stylu csTimera, ciemny motyw:
+Rozmieszczenie jak w csTimerze, ciemny motyw:
 
-- **Lewy panel**: wybór sesji (z przyciskami: nowa, zmiana nazwy, usuń), wybór konkurencji, skrócone statystyki i lista czasów. Na dole przyciski Statystyki (wykres czasów i ao12 plus pełne zestawienie), CSV i Wyczyść.
-- **Góra**: scramble z przyciskami poprzedni / następny (klawisze `P` / `N`) i ikoną ustawień.
-- **Środek**: duży zegar, po ułożeniu przyciski OK / +2 / DNF / Usuń.
-- **Dół po prawej**: panel z obrazkiem scramble (kliknięcie powiększa) i panel ao5 / ao12 / ao100 / mean. Oba można ukryć w ustawieniach.
+- **Lewy panel**: u góry ikony narzędzi (ustawienia, statystyki z wykresem, eksport CSV, wyczyść sesję), wiersz „Sesja” z listą sesji i przyciskami nowa / zmień nazwę / usuń, tabela **obecny / najlepszy** (czas, ao5, ao12, ao100 albo mo3), podsumowanie „Ułożenie: udane/wszystkie, średnia” i lista czasów (najlepszy na zielono, najgorszy na czerwono).
+- **Góra**: wybór konkurencji, linki „ostatni / następny scramble” (klawisze `P` / `N`) i duży scramble.
+- **Środek**: zegar w dużej ramce, pod nim przyciski OK / +2 / DNF / Usuń i linie **ao5 / ao12** (lub mo3 / ao5).
+- **Prawy dolny róg**: panel z obrazkiem scramble (kliknięcie powiększa). Obrazek i linie ao5 / ao12 można ukryć w ustawieniach.
 
 Zmiana konkurencji nie zmienia sesji: sesja zapamiętuje wybraną konkurencję, a czasy zostają na miejscu. Wszystkie okna dialogowe są własne, więc działają także w piaskownicy (np. w opublikowanym artefakcie), gdzie systemowe `prompt`/`confirm` są blokowane.
 

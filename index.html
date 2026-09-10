@@ -64,65 +64,87 @@
   .icon-btn.big { width: 40px; height: 40px; } .icon-btn.big svg { width: 22px; height: 22px; }
 
   /* ---------- layout ---------- */
-  .app { height: 100%; min-width: 1000px; display: grid; grid-template-columns: 320px 1fr; }
+  .app { height: 100%; min-width: 1000px; display: grid; grid-template-columns: 300px 1fr; }
   .sidebar {
     background: var(--panel);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column; min-height: 0;
   }
-  .sb-head { padding: 14px 14px 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--border); }
-  .sb-row { display: flex; gap: 6px; align-items: center; }
-  .sb-row select { flex: 1; min-width: 0; }
-  .sb-label { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
-  .sb-stats {
-    padding: 10px 14px; border-bottom: 1px solid var(--border);
-    display: grid; grid-template-columns: 1fr auto 1fr auto; gap: 5px 10px; font-size: 13px;
+  .sb-tools { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 10px 10px 8px; border-bottom: 1px solid var(--border); }
+  .sb-tools button {
+    height: 46px; border-radius: 10px; background: var(--card); color: var(--text);
+    display: flex; align-items: center; justify-content: center;
   }
-  .sb-stats .l { color: var(--muted); }
-  .sb-stats .v { font-family: var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
-  .sb-stats .v.dnf { color: var(--hold); }
-  .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 6px; }
-  .times table { width: 100%; border-collapse: collapse; font-size: 14px; }
-  .times th, .times td { padding: 7px 8px; text-align: right; border-bottom: 1px solid var(--border); }
-  .times th { color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; position: sticky; top: 0; background: var(--panel); }
-  .times td:first-child, .times th:first-child { text-align: left; color: var(--muted); width: 36px; }
+  .sb-tools button:hover { background: var(--card-2); }
+  .sb-tools button.danger { color: var(--hold); }
+  .sb-tools button svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+  .sb-session { display: flex; align-items: center; gap: 4px; padding: 10px 10px 8px; }
+  .sb-session .lbl { color: var(--accent); font-weight: 600; font-size: 15px; flex: none; margin-right: 4px; }
+  .sb-session select { flex: 1; min-width: 0; padding: 6px 28px 6px 8px; }
+  .sb-session .icon-btn { width: 26px; height: 26px; border-radius: 7px; }
+  .sb-session .icon-btn svg { width: 15px; height: 15px; }
+  table.sb-stats { width: calc(100% - 20px); margin: 0 10px; border-collapse: collapse; font-size: 15px; }
+  table.sb-stats th { color: var(--text); font-weight: 600; text-align: right; padding: 3px 8px; }
+  table.sb-stats th:first-child { text-align: left; }
+  table.sb-stats td { padding: 4px 8px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ready); }
+  table.sb-stats td:first-child { text-align: left; font-family: var(--font); color: var(--text); font-weight: 600; }
+  table.sb-stats td.dnf { color: var(--hold); }
+  table.sb-stats td.none { color: var(--muted); }
+  .sb-summary { text-align: center; padding: 8px 10px 10px; margin: 6px 10px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); font-weight: 600; font-size: 15px; line-height: 1.6; }
+  .sb-summary .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .times { flex: 1; overflow-y: auto; min-height: 0; padding: 0 10px 10px; }
+  .times table { width: 100%; border-collapse: collapse; font-size: 15px; }
+  .times th, .times td { padding: 6px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  .times th { color: var(--accent); font-weight: 600; position: sticky; top: 0; background: var(--panel); }
+  .times td:first-child, .times th:first-child { color: var(--muted); width: 32px; }
   .times tr { cursor: pointer; }
   .times tbody tr:hover { background: var(--card); }
   .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
   .times td.best { color: var(--ready); font-weight: 600; }
+  .times td.worst { color: var(--hold); }
   .times td.dnf { color: var(--hold); }
-  .times .empty { padding: 40px 16px; color: var(--muted); text-align: center; line-height: 1.5; }
-  .sb-foot { padding: 10px 14px; border-top: 1px solid var(--border); display: flex; gap: 8px; }
-  .sb-foot button { flex: 1; background: var(--card-2); border-radius: 9px; padding: 8px 10px; font-weight: 500; }
-  .sb-foot button:hover { background: #38383b; }
-  .sb-foot button.danger { color: var(--hold); }
+  .times .empty { padding: 40px 12px; color: var(--muted); text-align: center; line-height: 1.5; }
 
   .main { display: flex; flex-direction: column; min-height: 0; position: relative; transition: background 0.15s; }
   .main.holding { background: #22111a; }
   .main.ready { background: #0d2419; }
   .main.inspecting { background: #10121c; }
-  .scr-bar { display: flex; align-items: center; gap: 8px; padding: 14px 18px 6px; }
+  .scr-bar { padding: 8px 24px 10px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .scr-controls { display: flex; align-items: center; justify-content: center; gap: 10px; font-family: var(--mono); font-size: 15px; color: var(--text); }
+  .scr-controls select { width: auto; min-width: 150px; padding: 5px 28px 5px 9px; }
+  .scr-controls .link { color: var(--accent); font-family: var(--mono); font-size: 15px; padding: 4px 2px; }
+  .scr-controls .link:hover { text-decoration: underline; }
+  .scr-controls .link:disabled { color: var(--muted); text-decoration: none; cursor: default; }
+  .scr-controls .sep { color: var(--muted); }
   .scramble {
-    flex: 1;
     font-family: var(--mono);
     font-weight: 500;
-    font-size: clamp(15px, 1.55vw, 24px);
-    line-height: 1.65;
+    font-size: clamp(18px, 2.2vw, 38px);
+    line-height: 1.5;
     text-align: center;
     white-space: pre-line;
     max-height: 26vh;
     overflow-y: auto;
-    padding: 6px 10px;
-    border-radius: 10px;
+    padding: 8px 10px 2px;
+    letter-spacing: 0.04em;
   }
-  .scramble.long { font-size: clamp(13px, 1.2vw, 19px); }
-  .scramble.multi { text-align: left; font-size: clamp(12px, 1.1vw, 17px); line-height: 1.5; max-width: 760px; margin: 0 auto; }
+  .scramble.long { font-size: clamp(14px, 1.45vw, 24px); letter-spacing: 0.02em; }
+  .scramble.multi { text-align: left; font-size: clamp(13px, 1.25vw, 20px); line-height: 1.45; max-width: 860px; margin: 0 auto; letter-spacing: 0; }
   .scramble.hidden-during-solve { visibility: hidden; }
-  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 10px 20px; }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 16px 380px 16px 60px; }
+  .timer-box {
+    width: min(1100px, 100%);
+    min-height: clamp(170px, 27vh, 300px);
+    background: var(--card);
+    border: 1px solid #3a3a3d;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px 24px;
+  }
   .timer {
     font-family: var(--mono);
     font-weight: 600;
-    font-size: clamp(64px, 11vw, 190px);
+    font-size: clamp(80px, 11vw, 200px);
     line-height: 1;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -136,18 +158,21 @@
   .penalty-bar button:hover { background: var(--card-2); }
   .penalty-bar button.primary { background: var(--accent); color: #fff; }
   .penalty-bar button.danger { color: var(--hold); }
+  .center-stats { text-align: center; font-size: clamp(28px, 3.2vw, 54px); line-height: 1.35; font-weight: 500; }
+  .center-stats .k { color: var(--muted); }
+  .center-stats .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .center-stats .first .v { color: var(--ready); }
+  .center-stats .dnf { color: var(--hold); }
   .hint { color: var(--muted); font-size: 13px; text-align: center; max-width: 560px; }
 
-  .panels { display: flex; gap: 14px; padding: 0 18px 18px; justify-content: flex-end; align-items: stretch; flex-wrap: wrap; }
   .panel { background: var(--card); border-radius: var(--radius); }
-  .panel.image { width: 300px; height: 200px; padding: 12px; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
+  .panel.image {
+    position: absolute; right: 18px; bottom: 18px;
+    width: clamp(260px, 24vw, 360px); height: clamp(260px, 24vw, 360px);
+    padding: 16px; display: flex; align-items: center; justify-content: center; cursor: zoom-in;
+    border: 1px solid var(--border);
+  }
   .panel.image svg { width: 100%; height: 100%; display: block; }
-  .panel.stats { width: 300px; height: 200px; padding: 14px 18px; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr auto 1fr; gap: 4px 12px; align-items: center; }
-  .panel.stats .divider { grid-column: 1 / -1; height: 1px; background: var(--card-2); }
-  .stat { text-align: center; }
-  .stat .l { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
-  .stat .v { font-family: var(--mono); font-weight: 600; font-size: 26px; font-variant-numeric: tabular-nums; white-space: nowrap; }
-  .stat .v.dnf { color: var(--hold); }
 
   /* ---------- modal ---------- */
   .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 20; padding: 16px; }
@@ -201,42 +226,39 @@
 <body>
 <div class="app" id="app">
   <aside class="sidebar">
-    <div class="sb-head">
-      <div class="sb-label">Sesja</div>
-      <div class="sb-row">
-        <select class="field" id="sessionSel" title="Sesja"></select>
-        <button class="icon-btn" id="btnNewSession" title="Nowa sesja"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-        <button class="icon-btn" id="btnRename" title="Zmień nazwę sesji"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
-        <button class="icon-btn" id="btnDeleteSession" title="Usuń sesję"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
-      </div>
-      <div class="sb-label">Konkurencja</div>
-      <select class="field" id="eventSel" title="Konkurencja"></select>
+    <div class="sb-tools">
+      <button id="btnSettings" title="Ustawienia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+      <button id="btnStats" title="Statystyki i wykres"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M7 15l4-5 3 3 5-7"/></svg></button>
+      <button id="btnExport" title="Eksportuj CSV"><svg viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg></button>
+      <button id="btnClear" class="danger" title="Wyczyść czasy w sesji"><svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg></button>
     </div>
-    <div class="sb-stats" id="sbStats"></div>
+    <div class="sb-session">
+      <span class="lbl">Sesja</span>
+      <select class="field" id="sessionSel" title="Sesja"></select>
+      <button class="icon-btn" id="btnNewSession" title="Nowa sesja"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button class="icon-btn" id="btnRename" title="Zmień nazwę sesji"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
+      <button class="icon-btn" id="btnDeleteSession" title="Usuń sesję"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <table class="sb-stats" id="sbStats"></table>
+    <div class="sb-summary" id="sbSummary"></div>
     <div class="times" id="timesList"></div>
-    <div class="sb-foot">
-      <button id="btnStats">Statystyki</button>
-      <button id="btnExport">CSV</button>
-      <button id="btnClear" class="danger">Wyczyść</button>
-    </div>
   </aside>
 
   <main class="main" id="main">
     <div class="scr-bar">
-      <button class="icon-btn big" id="btnPrevScr" title="Poprzedni scramble"><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="scr-controls">
+        <select class="field" id="eventSel" title="Konkurencja"></select>
+        <button class="link" id="btnPrevScr" title="Poprzedni scramble (P)">ostatni</button><span class="sep">/</span><button class="link" id="btnNextScr" title="Następny scramble (N)">następny</button><span>scramble</span>
+      </div>
       <div class="scramble" id="scramble"></div>
-      <button class="icon-btn big" id="btnNextScr" title="Następny scramble (N)"><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
-      <button class="icon-btn big" id="btnSettings" title="Ustawienia"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     </div>
     <div class="stage" id="stage">
-      <div class="timer" id="timer">0.00</div>
+      <div class="timer-box" id="timerBox"><div class="timer" id="timer">0.00</div></div>
       <div class="penalty-bar" id="penaltyBar"></div>
+      <div class="center-stats" id="centerStats"></div>
       <div class="hint" id="hint"></div>
     </div>
-    <div class="panels" id="panels">
-      <div class="panel image" id="imgCard" title="Powiększ"><div id="scrImg"></div></div>
-      <div class="panel stats" id="miniStats"></div>
-    </div>
+    <div class="panel image" id="imgCard" title="Powiększ"><div id="scrImg"></div></div>
   </main>
 </div>
 
@@ -934,8 +956,8 @@
   const $ = id => document.getElementById(id);
   const el = {
     app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'), hint: $('hint'),
-    penaltyBar: $('penaltyBar'), panels: $('panels'), imgCard: $('imgCard'), scrImg: $('scrImg'), miniStats: $('miniStats'),
-    sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), timesList: $('timesList'),
+    penaltyBar: $('penaltyBar'), imgCard: $('imgCard'), scrImg: $('scrImg'), centerStats: $('centerStats'),
+    sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), sbSummary: $('sbSummary'), timesList: $('timesList'),
     btnPrevScr: $('btnPrevScr'), modalBg: $('modalBg'), dialog: $('dialog'),
   };
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -1007,7 +1029,7 @@
   function resetScrambles() { scrHistory = []; scrIndex = -1; newScramble(); }
   function renderImage() {
     el.imgCard.hidden = !state.showImage;
-    el.miniStats.hidden = !state.showStats;
+    el.centerStats.hidden = !state.showStats;
     el.scrImg.innerHTML = state.showImage ? scrambleSvg(session().event, currentScramble) : '';
   }
   $('btnNextScr').addEventListener('click', e => { nextScramble(); e.currentTarget.blur(); });
@@ -1029,7 +1051,8 @@
     el.main.classList.toggle('ready', p === 'ready' || p === 'inspReady');
     el.main.classList.toggle('inspecting', p.startsWith('insp'));
     el.scramble.classList.toggle('hidden-during-solve', p === 'running');
-    el.panels.style.visibility = p === 'running' ? 'hidden' : '';
+    el.imgCard.style.visibility = p === 'running' ? 'hidden' : '';
+    el.centerStats.style.visibility = p === 'running' ? 'hidden' : '';
     if (p === 'running') { el.hint.textContent = 'Naciśnij dowolny klawisz lub kliknij, aby zatrzymać.'; el.penaltyBar.innerHTML = ''; }
     else if (p === 'inspecting') el.hint.textContent = 'Inspekcja. Przytrzymaj spację, aby wystartować.';
     else if (p === 'idle') el.hint.textContent = idleHint();
@@ -1151,22 +1174,22 @@
     $('btnDeleteSession').disabled = state.sessions.length <= 1;
   }
   function render() {
-    const list = solves(), ev = event(), best = bestSolve(list);
+    const list = solves(), ev = event(), best = bestSolve(list), worst = worstSolve(list);
     renderSessionSelect();
     el.eventSel.value = session().event;
     document.title = `${session().name} · ${ev.name} · Cube Timer`;
 
-    if (ev.fmt === 'ao') {
-      el.miniStats.innerHTML = tile('ao5', dash(lastN(list, 5, average))) + tile('ao12', dash(lastN(list, 12, average)))
-        + '<div class="divider"></div>' + tile('ao100', dash(lastN(list, 100, average))) + tile('mean', dash(mean(list)));
-    } else {
-      el.miniStats.innerHTML = tile('mo3', dash(lastN(list, 3, meanOf))) + tile('ao5', dash(lastN(list, 5, average)))
-        + '<div class="divider"></div>' + tile('best', best ? fmtSolve(best) : '–') + tile('mean', dash(mean(list)));
-    }
-    const sb = [sbRow('Ułożenia', list.length), sbRow('Najlepszy', best ? fmtSolve(best) : '–'), sbRow('Średnia', dash(mean(list)))];
-    if (ev.fmt === 'mo3') sb.push(sbRow('mo3', dash(lastN(list, 3, meanOf))), sbRow('ao5', dash(lastN(list, 5, average))), sbRow('Najl. mo3', dash(bestN(list, 3, meanOf))));
-    else sb.push(sbRow('ao5', dash(lastN(list, 5, average))), sbRow('ao12', dash(lastN(list, 12, average))), sbRow('ao100', dash(lastN(list, 100, average))), sbRow('Najl. ao5', dash(bestN(list, 5, average))), sbRow('Najl. ao12', dash(bestN(list, 12, average))));
-    el.sbStats.innerHTML = sb.join('');
+    const cur = (n, f) => dash(lastN(list, n, f)), bst = (n, f) => dash(bestN(list, n, f));
+    const td = v => `<td class="${v === 'DNF' ? 'dnf' : v === '–' ? 'none' : ''}">${v}</td>`;
+    const trs = [`<tr><td>czas</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–')}${td(best ? fmtSolve(best) : '–')}</tr>`];
+    if (ev.fmt === 'mo3') trs.push(`<tr><td>mo3</td>${td(cur(3, meanOf))}${td(bst(3, meanOf))}</tr>`);
+    trs.push(`<tr><td>ao5</td>${td(cur(5, average))}${td(bst(5, average))}</tr>`, `<tr><td>ao12</td>${td(cur(12, average))}${td(bst(12, average))}</tr>`);
+    if (ev.fmt === 'ao') trs.push(`<tr><td>ao100</td>${td(cur(100, average))}${td(bst(100, average))}</tr>`);
+    el.sbStats.innerHTML = `<thead><tr><th></th><th>obecny</th><th>najlepszy</th></tr></thead><tbody>${trs.join('')}</tbody>`;
+    const solved = list.filter(s => s.penalty !== 'DNF').length;
+    el.sbSummary.innerHTML = `Ułożenie: <span class="mono">${solved}/${list.length}</span><br>średnia: <span class="mono">${dash(mean(list))}</span>`;
+    const line = (k, v, first) => `<div class="${first ? 'first' : ''}"><span class="k">${k}: </span><span class="v${v === 'DNF' ? ' dnf' : ''}">${v}</span></div>`;
+    el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
 
     if (!list.length) el.timesList.innerHTML = '<div class="empty">Brak ułożeń w tej sesji.<br>Przytrzymaj spację, aby zacząć.</div>';
     else {
@@ -1176,15 +1199,15 @@
         let extra;
         if (ev.fmt === 'ao') {
           const a5 = i >= 4 ? average(list.slice(i - 4, i + 1)) : null, a12 = i >= 11 ? average(list.slice(i - 11, i + 1)) : null;
-          extra = `<td class="time">${a5 == null ? '' : fmt(a5)}</td><td class="time">${a12 == null ? '' : fmt(a12)}</td>`;
+          extra = `<td class="time">${a5 == null ? '-' : fmt(a5)}</td><td class="time">${a12 == null ? '-' : fmt(a12)}</td>`;
         } else {
-          const m3 = i >= 2 ? meanOf(list.slice(i - 2, i + 1)) : null;
-          extra = `<td class="time">${m3 == null ? '' : fmt(m3)}</td>`;
+          const m3 = i >= 2 ? meanOf(list.slice(i - 2, i + 1)) : null, a5 = i >= 4 ? average(list.slice(i - 4, i + 1)) : null;
+          extra = `<td class="time">${m3 == null ? '-' : fmt(m3)}</td><td class="time">${a5 == null ? '-' : fmt(a5)}</td>`;
         }
-        const cls = best && s.id === best.id ? ' best' : s.penalty === 'DNF' ? ' dnf' : '';
+        const cls = best && s.id === best.id ? ' best' : (s.penalty === 'DNF' || (worst && s.id === worst.id && list.length > 1)) ? ' worst' : '';
         rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${cls}">${fmtSolve(s)}</td>${extra}</tr>`);
       }
-      const head = ev.fmt === 'ao' ? '<th>czas</th><th>ao5</th><th>ao12</th>' : '<th>czas</th><th>mo3</th>';
+      const head = ev.fmt === 'ao' ? '<th>czas</th><th>ao5</th><th>ao12</th>' : '<th>czas</th><th>mo3</th><th>ao5</th>';
       el.timesList.innerHTML = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
   }
@@ -1298,7 +1321,7 @@
       </div>
       <div class="section-title">Panele</div><div class="group">
         ${sw('optImage', 'Obrazek scramble', 'Stan łamigłówki po wykonaniu scramble', state.showImage)}
-        ${sw('optStats', 'Panel statystyk', 'ao5, ao12, ao100 i średnia pod timerem', state.showStats)}
+        ${sw('optStats', 'ao5 / ao12 pod zegarem', 'Aktualne średnie pod timerem', state.showStats)}
       </div>
       <div class="section-title">Skróty</div><div class="group">
         <div class="row"><div>Start</div><div class="sub">przytrzymaj <span class="kbd">Spacja</span>, puść gdy zielony</div></div>
