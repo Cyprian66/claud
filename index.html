@@ -909,7 +909,7 @@
   const STORAGE_KEY = 'cubeTimer.v2';
   const LEGACY_KEY = 'cubeTimer.v1';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, showStats: true, inputMode: 'timer' };
+  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, showStats: true, showDiff: true, inputMode: 'timer' };
 
   function load() {
     try {
@@ -932,14 +932,19 @@
     state.sessions = state.sessions.filter(s => s && EVENTS[s.event] && Array.isArray(s.solves));
     if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Session 1', event: '333', solves: [] });
     if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
+    // every solve belongs to the event it was done in; older data inherits the session's event
+    for (const ses of state.sessions) for (const sv of ses.solves) if (!EVENTS[sv.event]) sv.event = ses.event;
     delete state.precision;
     if (typeof state.showImage !== 'boolean') state.showImage = true;
     if (typeof state.showStats !== 'boolean') state.showStats = true;
     if (state.inputMode !== 'typing') state.inputMode = 'timer';
+    if (typeof state.showDiff !== 'boolean') state.showDiff = true;
   }
   function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota */ } }
   const session = () => state.sessions.find(s => s.id === state.current);
-  const solves = () => session().solves;
+  const allSolves = () => session().solves;
+  // the list and all statistics only cover solves done in the currently selected event
+  const solves = () => allSolves().filter(s => s.event === session().event);
   const event = () => EVENTS[session().event];
   const inspectionActive = () => state.inspection && event().insp;
 
@@ -1098,6 +1103,7 @@
   // =====================================================================
   const HOLD_MS = 500, INSPECTION_MS = 15000;
   let phase = 'idle', holdTimer = null, startTime = 0, rafId = null, inspectionStart = 0, inspectionPenalty = null, lastSolveId = null;
+  let spaceDown = false, pointerDown = false;
   const zero = () => fmt(0);
   function setPhase(p) {
     phase = p;
@@ -1116,7 +1122,14 @@
     } else if (phase.startsWith('insp')) {
       const left = INSPECTION_MS - (performance.now() - inspectionStart);
       if (left > -2000) { el.timer.textContent = left > 0 ? Math.ceil(left / 1000) : '+2'; inspectionPenalty = left > 0 ? null : '+2'; }
-      else { el.timer.textContent = 'DNF'; inspectionPenalty = 'DNF'; }
+      else {
+        // 17 s of inspection: the attempt is a DNF and is recorded right away (WCA A3d1)
+        cancelAnimationFrame(rafId); clearTimeout(holdTimer); spaceDown = false; pointerDown = false; inspectionPenalty = null;
+        setPhase('idle');
+        addSolve(0, 'DNF');
+        if (state.inputMode === 'typing') el.entryInput.value = '';
+        return;
+      }
       rafId = requestAnimationFrame(tick);
     }
   }
@@ -1126,7 +1139,7 @@
   function renderDiff() {
     const list = solves();
     el.diff.textContent = ''; el.diff.className = 'diff';
-    if (!lastSolveId || list.length < 2 || list[list.length - 1].id !== lastSolveId) return;
+    if (!state.showDiff || !lastSolveId || list.length < 2 || list[list.length - 1].id !== lastSolveId) return;
     const a = effectiveMs(list[list.length - 1]), b = effectiveMs(list[list.length - 2]);
     if (!isFinite(a) || !isFinite(b)) return;
     const d = a - b;
@@ -1134,8 +1147,8 @@
     el.diff.classList.add(d < 0 ? 'better' : d > 0 ? 'worse' : 'same');
   }
   function addSolve(ms, penalty) {
-    const solve = { id: uid(), ms: Math.round(ms), penalty, scramble: currentScramble, date: new Date().toISOString() };
-    solves().push(solve);
+    const solve = { id: uid(), ms: Math.round(ms), penalty, event: session().event, scramble: currentScramble, date: new Date().toISOString() };
+    allSolves().push(solve);
     lastSolveId = solve.id;
     save();
     el.timer.textContent = fmtSolve(solve);
@@ -1177,7 +1190,7 @@
     render();
   }
   function deleteSolve(id) {
-    const list = solves(), idx = list.findIndex(x => x.id === id);
+    const list = allSolves(), idx = list.findIndex(x => x.id === id);
     if (idx < 0) return;
     list.splice(idx, 1); save();
     if (id === lastSolveId) resetDisplay();
@@ -1265,7 +1278,6 @@
       if (s) { el.timer.textContent = fmtSolve(s); renderDiff(); }
     } else if (phase === 'inspHolding') setPhase('inspecting');
   }
-  let spaceDown = false;
   document.addEventListener('keydown', e => {
     if (e.repeat) return;
     if (dialogOpen()) { if (e.key === 'Escape') closeDialog(null); return; }
@@ -1278,7 +1290,6 @@
     else if (e.key === 'p' || e.key === 'P') prevScramble();
   });
   document.addEventListener('keyup', e => { if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); } });
-  let pointerDown = false;
   el.stage.addEventListener('pointerdown', e => {
     if (state.inputMode === 'typing') return;
     if (phase !== 'running' && e.target.closest('button, .center-stats, .entry-box')) return;
@@ -1395,7 +1406,7 @@
     openDialog(`<h2>Solve #${idx} <span style="color:var(--muted);font-weight:400;font-size:15px">· ${new Date(s.date).toLocaleString('en-GB')}</span></h2>
       <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
       <div class="scr">${esc(s.scramble)}</div>
-      <div class="preview">${state.showImage ? scrambleSvg(session().event, s.scramble) : ''}</div>
+      <div class="preview">${state.showImage ? scrambleSvg(s.event || session().event, s.scramble) : ''}</div>
       <div class="actions" id="solveActions"></div>`, 'wide');
     const actions = $('solveActions');
     actions.append(penaltyButtons(s, () => openSolve(id)));
@@ -1497,6 +1508,7 @@
       <div class="section-title">Panels</div><div class="group">
         ${sw('optImage', 'Scramble image', 'Puzzle state after the scramble', state.showImage)}
         ${sw('optStats', 'Averages under the timer', 'ao5 / ao12 (mo3 / ao5 for mean-of-3 events)', state.showStats)}
+        ${sw('optDiff', 'Difference to previous solve', 'Green when faster, red when slower', state.showDiff)}
       </div>
       <div class="section-title">Shortcuts</div><div class="group">
         <div class="row"><div>Start</div><div class="sub">hold <span class="kbd">Space</span>, release when green</div></div>
@@ -1511,6 +1523,7 @@
     $('optHideTime').addEventListener('change', e => { state.hideTime = e.target.checked; save(); });
     $('optImage').addEventListener('change', e => { state.showImage = e.target.checked; save(); renderImage(); });
     $('optStats').addEventListener('change', e => { state.showStats = e.target.checked; save(); renderImage(); });
+    $('optDiff').addEventListener('change', e => { state.showDiff = e.target.checked; save(); renderDiff(); });
   }
   $('btnSettings').addEventListener('click', openSettings);
 
@@ -1538,7 +1551,7 @@
   $('btnDeleteSession').addEventListener('click', async () => {
     if (state.sessions.length <= 1) return;
     const s = session();
-    if (!await ask({ title: `Delete session “${s.name}”?`, message: `The session has ${s.solves.length} solves. This cannot be undone.`, ok: 'Delete', danger: true })) return;
+    if (!await ask({ title: `Delete session “${s.name}”?`, message: `The session has ${s.solves.length} solves across all events. This cannot be undone.`, ok: 'Delete', danger: true })) return;
     state.sessions = state.sessions.filter(x => x.id !== s.id);
     switchSession(state.sessions[0].id);
   });
@@ -1550,19 +1563,20 @@
   });
   $('btnClear').addEventListener('click', async () => {
     if (!solves().length) return;
-    if (!await ask({ title: 'Clear times?', message: `All ${solves().length} solves in session “${session().name}” will be deleted.`, ok: 'Clear', danger: true })) return;
-    session().solves = []; resetDisplay(); save(); render();
+    if (!await ask({ title: 'Clear times?', message: `All ${solves().length} ${event().name} solves in session “${session().name}” will be deleted.`, ok: 'Clear', danger: true })) return;
+    const ev = session().event;
+    session().solves = allSolves().filter(s => s.event !== ev); resetDisplay(); save(); render();
   });
   $('btnExport').addEventListener('click', () => {
     const list = solves();
     if (!list.length) return;
     const q = v => `"${String(v).replace(/"/g, '""')}"`;
     const lines = ['no,time_ms,penalty,result,event,scramble,date'];
-    list.forEach((s, i) => lines.push([i + 1, s.ms, s.penalty || '', fmtSolve(s), session().event, q(s.scramble), s.date].join(',')));
+    list.forEach((s, i) => lines.push([i + 1, s.ms, s.penalty || '', fmtSolve(s), s.event, q(s.scramble), s.date].join(',')));
     const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `cube-timer-${session().name.replace(/[^\w-]+/g, '_')}-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `cube-timer-${session().name.replace(/[^\w-]+/g, '_')}-${session().event}-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(a.href);
   });
