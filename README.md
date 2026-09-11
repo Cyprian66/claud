@@ -9,9 +9,10 @@ Rozmieszczenie jak w csTimerze, ciemny motyw:
 
 Interfejs aplikacji jest po angielsku.
 
-- **Lewy panel**: u góry ikony narzędzi (Settings, Statistics z wykresem, Export CSV, Clear), wiersz „Session” z listą sesji i przyciskami nowa / zmień nazwę / usuń, tabela **current / best** (time, ao5, ao12, ao100 albo mo3), podsumowanie „Solves: udane/wszystkie, mean” i lista czasów (najlepszy na zielono, najgorszy na czerwono).
+- **Lewy panel**: u góry ikony narzędzi (Settings, Statistics z wykresem, Export CSV, Clear), wiersz „Session” z listą sesji i przyciskami nowa / zmień nazwę / usuń, tabela **current / best** (time, ao5, ao12 oraz mo3 dla konkurencji na średnią z 3; ao25, ao50, ao100, ao200, ao500 i ao1000 pojawiają się dopiero, gdy sesja ma tyle ułożeń), podsumowanie „Solves: udane/wszystkie, mean” i lista czasów (najlepszy na zielono, najgorszy na czerwono).
 - **Góra**: wybór konkurencji, linki „last / next scramble” (klawisze `P` / `N`) i duży scramble.
-- **Środek**: duży zegar, pod nim przyciski OK / +2 / DNF / Delete i linie **ao5 / ao12** (mo3 / ao5 dla konkurencji na średnią z 3).
+- **Środek**: duży zegar, obok niego różnica względem poprzedniego ułożenia (zielona, gdy lepiej, czerwona, gdy gorzej), pod nim przyciski OK / +2 / DNF / Delete i linie **ao5 / ao12** (mo3 / ao5 dla konkurencji na średnią z 3).
+- **Tryb wpisywania czasów** (Settings → Time entry → Type times): zamiast stopera na środku pojawia się ramka, w której wpisujesz czas i zatwierdzasz Enterem. Notacja jak w csTimerze: `1234` = 12.34, `10234` = 1:02.34, `1234+` = +2, `DNF`.
 - **Prawy dolny róg**: panel z obrazkiem scramble (kliknięcie powiększa). Obrazek i linie ao5 / ao12 można ukryć w ustawieniach.
 
 Zmiana konkurencji nie zmienia sesji: sesja zapamiętuje wybraną konkurencję, a czasy zostają na miejscu. Wszystkie okna dialogowe są własne, więc działają także w piaskownicy (np. w opublikowanym artefakcie), gdzie systemowe `prompt`/`confirm` są blokowane.

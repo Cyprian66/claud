@@ -83,10 +83,10 @@
   .sb-session select { flex: 1; min-width: 0; padding: 7px 28px 7px 9px; font-size: 16px; }
   .sb-session .icon-btn { width: 26px; height: 26px; border-radius: 7px; }
   .sb-session .icon-btn svg { width: 15px; height: 15px; }
-  table.sb-stats { width: calc(100% - 20px); margin: 0 10px; border-collapse: collapse; font-size: 18px; }
-  table.sb-stats th { color: var(--text); font-weight: 600; text-align: right; padding: 4px 8px; font-size: 17px; }
-  table.sb-stats th:first-child { text-align: left; }
-  table.sb-stats td { padding: 5px 8px; text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ready); }
+  table.sb-stats { width: calc(100% - 20px); margin: 0 10px; border-collapse: collapse; font-size: 18px; table-layout: fixed; }
+  table.sb-stats th { color: var(--text); font-weight: 600; text-align: center; padding: 4px 4px; font-size: 17px; width: 36%; }
+  table.sb-stats th:first-child { text-align: left; width: 28%; }
+  table.sb-stats td { padding: 5px 4px; text-align: center; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ready); }
   table.sb-stats td:first-child { text-align: left; font-family: var(--font); color: var(--text); font-weight: 600; }
   table.sb-stats td.dnf { color: var(--hold); }
   table.sb-stats td.none { color: var(--muted); }
@@ -141,6 +141,29 @@
     font-variant-numeric: tabular-nums;
     transition: color 0.1s;
   }
+  .timer-row { display: flex; align-items: center; gap: 0.25em; }
+  .timer-row.small .timer { font-size: clamp(40px, 4.5vw, 80px); }
+  .diff { font-family: var(--mono); font-weight: 600; font-size: clamp(22px, 2.6vw, 48px); font-variant-numeric: tabular-nums; align-self: flex-end; padding-bottom: 0.15em; }
+  .timer-row.small .diff { font-size: clamp(18px, 1.8vw, 32px); }
+  .diff.better { color: var(--ready); }
+  .diff.worse { color: var(--hold); }
+  .diff.same { color: var(--muted); }
+  .entry-box {
+    width: min(1100px, 100%);
+    min-height: clamp(150px, 24vh, 260px);
+    background: var(--card);
+    border: 1px solid #3a3a3d;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 16px 24px;
+  }
+  .entry-box input {
+    width: 100%; background: transparent; border: 0; outline: none; text-align: center;
+    font-family: var(--mono); font-weight: 600; font-size: clamp(60px, 8vw, 150px); color: var(--text);
+    font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text;
+  }
+  .entry-box input::placeholder { color: #3a3a3d; }
+  .entry-hint { color: var(--muted); font-size: 14px; margin-top: -10px; }
   .holding .timer { color: var(--hold); }
   .ready .timer { color: var(--ready); }
   .inspecting .timer { color: var(--accent); }
@@ -243,7 +266,9 @@
       <div class="scramble" id="scramble"></div>
     </div>
     <div class="stage" id="stage">
-      <div class="timer" id="timer">0.00</div>
+      <div class="entry-box" id="entryBox" hidden><input id="entryInput" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" spellcheck="false" aria-label="Type a time"></div>
+      <div class="entry-hint" id="entryHint" hidden>Type a time and press Enter · 1234 = 12.34 · 10234 = 1:02.34 · 1234+ = +2 · DNF</div>
+      <div class="timer-row" id="timerRow"><div class="timer" id="timer">0.00</div><div class="diff" id="diff"></div></div>
       <div class="penalty-bar" id="penaltyBar"></div>
       <div class="center-stats" id="centerStats"></div>
     </div>
@@ -860,7 +885,7 @@
   const STORAGE_KEY = 'cubeTimer.v2';
   const LEGACY_KEY = 'cubeTimer.v1';
   const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, showStats: true };
+  let state = { sessions: [], current: null, inspection: false, hideTime: false, showImage: true, showStats: true, inputMode: 'timer' };
 
   function load() {
     try {
@@ -886,6 +911,7 @@
     delete state.precision;
     if (typeof state.showImage !== 'boolean') state.showImage = true;
     if (typeof state.showStats !== 'boolean') state.showStats = true;
+    if (state.inputMode !== 'typing') state.inputMode = 'timer';
   }
   function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota */ } }
   const session = () => state.sessions.find(s => s.id === state.current);
@@ -944,13 +970,16 @@
   const bestSolve = list => { const v = list.filter(s => effectiveMs(s) !== Infinity); return v.length ? v.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b) : null; };
   const worstSolve = list => { const v = list.filter(s => effectiveMs(s) !== Infinity); return v.length ? v.reduce((a, b) => effectiveMs(a) > effectiveMs(b) ? a : b) : null; };
   const dash = v => v == null ? '–' : fmt(v);
+  const BIG_AVGS = [25, 50, 100, 200, 500, 1000]; // shown only once the session has that many solves
+  const availableAvgs = list => BIG_AVGS.filter(n => list.length >= n);
 
   // =====================================================================
   //  DOM
   // =====================================================================
   const $ = id => document.getElementById(id);
   const el = {
-    app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), scramble: $('scramble'),
+    app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), timerRow: $('timerRow'), diff: $('diff'), scramble: $('scramble'),
+    entryBox: $('entryBox'), entryInput: $('entryInput'), entryHint: $('entryHint'),
     penaltyBar: $('penaltyBar'), imgCard: $('imgCard'), scrImg: $('scrImg'), centerStats: $('centerStats'),
     sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), sbSummary: $('sbSummary'), timesList: $('timesList'),
     btnPrevScr: $('btnPrevScr'), modalBg: $('modalBg'), dialog: $('dialog'),
@@ -981,6 +1010,7 @@
     el.dialog.innerHTML = '';
     const r = dialogResolve; dialogResolve = null;
     if (r) r(result);
+    if (state.inputMode === 'typing') el.entryInput.focus();
   }
   const dialogOpen = () => el.modalBg.classList.contains('open');
   // ask({ title, message, input, value, ok, danger }) -> Promise<string | true | null>
@@ -1059,18 +1089,33 @@
   }
   function startInspection() { inspectionStart = performance.now(); inspectionPenalty = null; setPhase('inspecting'); cancelAnimationFrame(rafId); tick(); }
   function startRunning() { startTime = performance.now(); setPhase('running'); cancelAnimationFrame(rafId); tick(); }
-  function stopRunning() {
-    const ms = performance.now() - startTime;
-    cancelAnimationFrame(rafId);
-    const solve = { id: uid(), ms: Math.round(ms), penalty: inspectionPenalty, scramble: currentScramble, date: new Date().toISOString() };
+  // difference between the last two solves, shown next to the time
+  function renderDiff() {
+    const list = solves();
+    el.diff.textContent = ''; el.diff.className = 'diff';
+    if (!lastSolveId || list.length < 2 || list[list.length - 1].id !== lastSolveId) return;
+    const a = effectiveMs(list[list.length - 1]), b = effectiveMs(list[list.length - 2]);
+    if (!isFinite(a) || !isFinite(b)) return;
+    const d = a - b;
+    el.diff.textContent = (d < 0 ? '-' : '+') + fmt(Math.abs(d));
+    el.diff.classList.add(d < 0 ? 'better' : d > 0 ? 'worse' : 'same');
+  }
+  function addSolve(ms, penalty) {
+    const solve = { id: uid(), ms: Math.round(ms), penalty, scramble: currentScramble, date: new Date().toISOString() };
     solves().push(solve);
     lastSolveId = solve.id;
     save();
-    setPhase('idle');
     el.timer.textContent = fmtSolve(solve);
+    renderDiff();
     renderPenaltyBar(solve);
     render();
     newScramble();
+  }
+  function stopRunning() {
+    const ms = performance.now() - startTime;
+    cancelAnimationFrame(rafId);
+    setPhase('idle');
+    addSolve(ms, inspectionPenalty);
   }
   function penaltyButtons(solve, onChange) {
     const frag = document.createDocumentFragment();
@@ -1095,7 +1140,7 @@
     const s = solves().find(x => x.id === id);
     if (!s) return;
     s.penalty = pen; save();
-    if (id === lastSolveId && phase === 'idle') el.timer.textContent = fmtSolve(s);
+    if (id === lastSolveId && phase === 'idle') { el.timer.textContent = fmtSolve(s); renderDiff(); }
     render();
   }
   function deleteSolve(id) {
@@ -1105,12 +1150,51 @@
     if (id === lastSolveId) resetDisplay();
     render();
   }
-  function resetDisplay() { lastSolveId = null; el.timer.textContent = zero(); el.penaltyBar.innerHTML = ''; }
+  function resetDisplay() { lastSolveId = null; el.timer.textContent = zero(); el.penaltyBar.innerHTML = ''; renderDiff(); }
   function cancelTiming() { if (phase !== 'idle') { cancelAnimationFrame(rafId); clearTimeout(holdTimer); setPhase('idle'); el.timer.textContent = zero(); } }
+
+  // ---- typed times (csTimer style: 1234 = 12.34, 10234 = 1:02.34, trailing + = +2, DNF) ----
+  function parseTyped(raw) {
+    let t = raw.trim().toUpperCase().replace(',', '.');
+    if (!t) return null;
+    if (t === 'DNF') return { ms: 0, penalty: 'DNF' };
+    let penalty = null;
+    if (t.endsWith('+')) { penalty = '+2'; t = t.slice(0, -1); }
+    let ms;
+    if (/^\d+$/.test(t)) {
+      const d = t.padStart(3, '0');
+      const hund = +d.slice(-2), rest = d.slice(0, -2);
+      const sec = +rest.slice(-2), min = +(rest.slice(0, -2) || 0);
+      ms = (min * 60 + sec) * 1000 + hund * 10;
+    } else {
+      const m = t.match(/^(?:(\d+):)?(\d+(?:\.\d{0,3})?)$/);
+      if (!m) return null;
+      ms = Math.round(((+m[1] || 0) * 60 + parseFloat(m[2])) * 1000);
+    }
+    if (!isFinite(ms) || ms <= 0) return null;
+    return { ms, penalty };
+  }
+  function applyInputMode() {
+    const typing = state.inputMode === 'typing';
+    cancelTiming();
+    el.entryBox.hidden = !typing; el.entryHint.hidden = !typing;
+    el.timerRow.classList.toggle('small', typing);
+    if (typing) { el.entryInput.value = ''; el.entryInput.focus(); }
+  }
+  el.entryInput.addEventListener('keydown', e => {
+    e.stopPropagation();
+    if (e.key === 'Enter') {
+      const r = parseTyped(el.entryInput.value);
+      if (!r) { el.entryInput.select(); return; }
+      el.entryInput.value = '';
+      addSolve(r.ms, r.penalty);
+    } else if (e.key === 'Escape') el.entryInput.value = '';
+  });
+  el.entryBox.addEventListener('click', () => el.entryInput.focus());
 
   // ---- input ----
   function press() {
-    if (dialogOpen()) return;
+    if (dialogOpen() || state.inputMode === 'typing') return;
     if (phase === 'running') { stopRunning(); return; }
     if (phase === 'idle') { if (inspectionActive()) startInspection(); else beginHold('holding', 'ready'); }
     else if (phase === 'inspecting') beginHold('inspHolding', 'inspReady');
@@ -1118,6 +1202,7 @@
   function beginHold(holdPhase, readyPhase) {
     setPhase(holdPhase);
     if (holdPhase === 'holding') el.timer.textContent = zero();
+    el.diff.textContent = '';
     clearTimeout(holdTimer);
     holdTimer = setTimeout(() => { if (phase === holdPhase) setPhase(readyPhase); }, HOLD_MS);
   }
@@ -1127,7 +1212,7 @@
     else if (phase === 'holding') {
       setPhase('idle');
       const s = lastSolveId && solves().find(x => x.id === lastSolveId);
-      if (s) el.timer.textContent = fmtSolve(s);
+      if (s) { el.timer.textContent = fmtSolve(s); renderDiff(); }
     } else if (phase === 'inspHolding') setPhase('inspecting');
   }
   let spaceDown = false;
@@ -1135,6 +1220,7 @@
     if (e.repeat) return;
     if (dialogOpen()) { if (e.key === 'Escape') closeDialog(null); return; }
     if (e.target.tagName === 'INPUT' && e.target.type === 'text') return;
+    if (state.inputMode === 'typing' && e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { el.entryInput.focus(); return; }
     if (phase === 'running') { e.preventDefault(); stopRunning(); return; }
     if (e.code === 'Space') { e.preventDefault(); if (e.target.tagName === 'SELECT' || e.target.tagName === 'BUTTON') e.target.blur(); spaceDown = true; press(); }
     else if (e.code === 'Escape') { if (phase.startsWith('insp')) cancelTiming(); }
@@ -1144,6 +1230,7 @@
   document.addEventListener('keyup', e => { if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); } });
   let pointerDown = false;
   el.stage.addEventListener('pointerdown', e => {
+    if (state.inputMode === 'typing') return;
     if (phase !== 'running' && e.target.closest('button')) return;
     e.preventDefault(); pointerDown = true; press();
   });
@@ -1173,7 +1260,7 @@
     const trs = [`<tr><td>time</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–')}${td(best ? fmtSolve(best) : '–')}</tr>`];
     if (ev.fmt === 'mo3') trs.push(`<tr><td>mo3</td>${td(cur(3, meanOf))}${td(bst(3, meanOf))}</tr>`);
     trs.push(`<tr><td>ao5</td>${td(cur(5, average))}${td(bst(5, average))}</tr>`, `<tr><td>ao12</td>${td(cur(12, average))}${td(bst(12, average))}</tr>`);
-    if (ev.fmt === 'ao') trs.push(`<tr><td>ao100</td>${td(cur(100, average))}${td(bst(100, average))}</tr>`);
+    for (const n of availableAvgs(list)) trs.push(`<tr><td>ao${n}</td>${td(cur(n, average))}${td(bst(n, average))}</tr>`);
     el.sbStats.innerHTML = `<thead><tr><th></th><th>current</th><th>best</th></tr></thead><tbody>${trs.join('')}</tbody>`;
     const solved = list.filter(s => s.penalty !== 'DNF').length;
     el.sbSummary.innerHTML = `Solves: <span class="mono">${solved}/${list.length}</span><br>mean: <span class="mono">${dash(mean(list))}</span>`;
@@ -1238,8 +1325,8 @@
     const rows = [statRow('Solves', list.length, dnfs ? `${dnfs} DNF` : ''), statRow('Best', best ? fmtSolve(best) : '–'), statRow('Worst', worst ? fmtSolve(worst) : '–'), statRow('Mean (all)', dash(mean(list)))];
     if (ev.fmt === 'mo3') rows.push(statRow('mo3', dash(lastN(list, 3, meanOf)), 'current'), statRow('Best mo3', dash(bestN(list, 3, meanOf))));
     rows.push(statRow('ao5', dash(lastN(list, 5, average)), 'current'), statRow('Best ao5', dash(bestN(list, 5, average))),
-      statRow('ao12', dash(lastN(list, 12, average)), 'current'), statRow('Best ao12', dash(bestN(list, 12, average))),
-      statRow('ao100', dash(lastN(list, 100, average)), 'current'), statRow('Best ao100', dash(bestN(list, 100, average))));
+      statRow('ao12', dash(lastN(list, 12, average)), 'current'), statRow('Best ao12', dash(bestN(list, 12, average))));
+    for (const n of availableAvgs(list)) rows.push(statRow(`ao${n}`, dash(lastN(list, n, average)), 'current'), statRow(`Best ao${n}`, dash(bestN(list, n, average))));
     openDialog(`<h2>Statistics · ${esc(session().name)} · ${esc(ev.name)}</h2>
       <div class="chart-wrap" id="chartWrap"><svg id="chart" viewBox="0 0 ${CH.w} ${CH.h}" preserveAspectRatio="none" role="img" aria-label="Session times chart"></svg>
       <div class="chart-legend"><span><i style="background:#4f8cff"></i>time</span><span><i style="background:#c97a1c"></i>ao12</span></div><div class="chart-tip" id="chartTip"></div></div>
@@ -1305,6 +1392,7 @@
     const ev = event();
     openDialog(`<h2>Settings</h2>
       <div class="section-title">Timer</div><div class="group">
+        <div class="row"><div>Time entry<div class="sub">Space bar timer or typing times into a box</div></div><select class="field" id="optInputMode" style="width:auto"><option value="timer"${state.inputMode === 'timer' ? ' selected' : ''}>Space bar</option><option value="typing"${state.inputMode === 'typing' ? ' selected' : ''}>Type times</option></select></div>
         ${sw('optInspection', '15 s inspection', ev.insp ? 'WCA +2 / DNF penalties' : 'Not available in this event', state.inspection && ev.insp, !ev.insp)}
         ${sw('optHideTime', 'Hide time while solving', '', state.hideTime)}
       </div>
@@ -1320,6 +1408,7 @@
       </div>
       <div class="actions"><button class="primary" id="dlgClose">Close</button></div>`);
     $('dlgClose').addEventListener('click', () => closeDialog());
+    $('optInputMode').addEventListener('change', e => { state.inputMode = e.target.value; save(); applyInputMode(); });
     $('optInspection').addEventListener('change', e => { state.inspection = e.target.checked; save(); });
     $('optHideTime').addEventListener('change', e => { state.hideTime = e.target.checked; save(); });
     $('optImage').addEventListener('change', e => { state.showImage = e.target.checked; save(); renderImage(); });
@@ -1386,6 +1475,7 @@
   render();
   resetScrambles();
   setPhase('idle');
+  applyInputMode();
 })();
 </script>
 </body>
