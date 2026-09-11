@@ -32,7 +32,7 @@ Przy tworzeniu lub edycji sesji (ikona ołówka) wybierasz typ **Normal** albo *
 - lista czasów dzieli się na **rundy po 5 ułożeń** (po 3 dla 6x6, 7x7 i konkurencji bez patrzenia, gdzie na zawodach liczy się mo3), każda z nagłówkiem i swoim ao5 / mo3 (lista nie pokazuje wtedy kolumny ao12),
 - ao5 rundy jest zielone, gdy jest równe celowi lub lepsze, czerwone, gdy gorsze,
 - pod zegarem widać numer bieżącego ułożenia w rundzie (np. „solve 3/5”), po czwartym ułożeniu **BPA i WPA** (najlepszą i najgorszą możliwą ao5 rundy) oraz wynik ostatniej ukończonej rundy („last ao5”),
-- w panelu po lewej jest cel i licznik rund poniżej celu, a okno statystyk ma listę wszystkich rund,
+- w panelu po lewej tabela current / best ma tylko wiersze time i ao5, gdzie ao5 to średnia ostatniej ukończonej rundy i najlepszej rundy, pod nią cel i licznik rund poniżej celu, a okno statystyk ma listę wszystkich rund,
 - kliknięcie nagłówka rundy otwiera jej czasy ze scramble.
 
 ## Konkurencje

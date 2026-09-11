@@ -1385,9 +1385,16 @@
     const td = (v, attrs = '') => `<td class="${v === 'DNF' ? 'dnf' : v === '–' ? 'none' : 'link'}"${v === '–' ? '' : ' ' + attrs}>${v}</td>`;
     const avgRow = (kind, n) => `<tr><td>${kind}${kind === 'mo' ? 3 : n}</td>${td(cur(n, kind === 'mo' ? meanOf : average), `data-avg="${kind}${n}" data-which="current"`)}${td(bst(n, kind === 'mo' ? meanOf : average), `data-avg="${kind}${n}" data-which="best"`)}</tr>`;
     const trs = [`<tr><td>time</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–', `data-solve="${list.length ? list[list.length - 1].id : ''}"`)}${td(best ? fmtSolve(best) : '–', `data-solve="${best ? best.id : ''}"`)}</tr>`];
-    if (ev.fmt === 'mo3') trs.push(avgRow('mo', 3));
-    trs.push(avgRow('ao', 5), avgRow('ao', 12));
-    for (const n of availableAvgs(list)) trs.push(avgRow('ao', n));
+    if (isComp()) {
+      // comp sim: the round average (last completed round / best round), not a rolling average
+      const done = rounds(list).filter(r => r.avg != null);
+      const lastR = done[done.length - 1], bestR = done.reduce((a, r) => (a == null || r.avg < a.avg) ? r : a, null);
+      trs.push(`<tr><td>${roundLabel()}</td>${td(lastR ? dash(lastR.avg) : '–', lastR ? `data-avg="${roundLabel()}" data-start="${lastR.start}"` : '')}${td(bestR ? dash(bestR.avg) : '–', bestR ? `data-avg="${roundLabel()}" data-start="${bestR.start}"` : '')}</tr>`);
+    } else {
+      if (ev.fmt === 'mo3') trs.push(avgRow('mo', 3));
+      trs.push(avgRow('ao', 5), avgRow('ao', 12));
+      for (const n of availableAvgs(list)) trs.push(avgRow('ao', n));
+    }
     el.sbStats.innerHTML = `<thead><tr><th></th><th>current</th><th>best</th></tr></thead><tbody>${trs.join('')}</tbody>`;
     const solved = list.filter(s => s.penalty !== 'DNF').length;
     let summary = `Solves: <span class="mono">${solved}/${list.length}</span><br>mean: <span class="mono">${dash(mean(list))}</span>`;
@@ -1426,7 +1433,7 @@
         const s = list[i];
         let extra;
         const avgCell = (kind, n) => {
-          if (i < n - 1) return '<td class="time">-</td>';
+          if (i < n - 1 || (rs && (i + 1) % n !== 0)) return '<td class="time">-</td>';
           const v = (kind === 'mo' ? meanOf : average)(list.slice(i - n + 1, i + 1));
           return `<td class="time link" data-avg="${kind}${n}" data-end="${i}">${fmt(v)}</td>`;
         };
@@ -1454,7 +1461,7 @@
     if (!cell) return;
     if (cell.dataset.solve) { openSolve(cell.dataset.solve); return; }
     const { kind, n } = parseAvg(cell.dataset.avg), list = solves(), f = kind === 'mo' ? meanOf : average;
-    const start = cell.dataset.which === 'best' ? bestWindowStart(list, n, f) : list.length - n;
+    const start = cell.dataset.start !== undefined ? +cell.dataset.start : cell.dataset.which === 'best' ? bestWindowStart(list, n, f) : list.length - n;
     if (start >= 0) openAverage(start, n, kind);
   });
   el.centerStats.addEventListener('click', e => {
