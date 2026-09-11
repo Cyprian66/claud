@@ -25,6 +25,16 @@ Wersja na telefon jest planowana osobno.
 
 Każda sesja ma własną nazwę i listę czasów. Zmiana konkurencji nie zmienia sesji ani nie ukrywa czasów: lista i statystyki obejmują całą sesję. Każde ułożenie zapamiętuje konkurencję, w której zostało zrobione, dzięki czemu obrazek scramble w szczegółach ułożenia jest zawsze właściwy. Można mieć kilka sesji dla tej samej konkurencji (np. „3x3 rano”, „3x3 OH”). Dane zapisują się w `localStorage`.
 
+### Symulacja zawodów (Comp sim)
+
+Przy tworzeniu lub edycji sesji (ikona ołówka) wybierasz typ **Normal** albo **Comp sim** i wpisujesz cel, np. `12.34` lub `1234`. W sesji comp sim:
+
+- lista czasów dzieli się na **rundy po 5 ułożeń** (po 3 dla 6x6, 7x7 i konkurencji bez patrzenia, gdzie na zawodach liczy się mo3), każda z nagłówkiem i swoim ao5 / mo3,
+- ao5 rundy jest zielone, gdy jest równe celowi lub lepsze, czerwone, gdy gorsze,
+- pod zegarem widać postęp bieżącej rundy (np. „round 3: 2/5”) i wynik ostatniej ukończonej,
+- w panelu po lewej jest cel i licznik rund poniżej celu, a okno statystyk ma listę wszystkich rund,
+- kliknięcie nagłówka rundy otwiera jej czasy ze scramble.
+
 ## Konkurencje
 
 Wszystkie oficjalne konkurencje WCA poza Fewest Moves i Multi-Blind, plus FTO:

@@ -104,6 +104,19 @@
   .times td.worst { color: var(--hold); }
   .times td.dnf { color: var(--hold); }
   .times .empty { padding: 40px 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+  .times tr.round-head td { text-align: left; background: var(--card); font-weight: 600; padding: 8px 10px; color: var(--text); }
+  .times tr.round-head .r-avg { float: right; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .times tr.round-head.hit .r-avg { color: var(--ready); }
+  .times tr.round-head.miss .r-avg { color: var(--hold); }
+  .times tr.round-head.open .r-avg { color: var(--muted); font-family: var(--font); font-weight: 500; }
+  .sb-summary .target { color: var(--accent); }
+  .center-stats .hit .v { color: var(--ready); }
+  .center-stats .miss .v { color: var(--hold); }
+  .dialog .form { display: grid; gap: 10px; }
+  .dialog .form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  .dialog .form label span.req { color: var(--muted); }
+  .dialog .form input.field, .dialog .form select.field { font-size: 16px; }
+  .dialog .form .hint { font-size: 12px; color: var(--muted); margin-top: -4px; }
 
   .main { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; transition: background 0.15s; }
   .main.holding { background: #22111a; }
@@ -274,7 +287,7 @@
       <span class="lbl">Session</span>
       <select class="field" id="sessionSel" title="Session"></select>
       <button class="icon-btn" id="btnNewSession" title="New session"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-      <button class="icon-btn" id="btnRename" title="Rename session"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
+      <button class="icon-btn" id="btnRename" title="Edit session (name, type, target)"><svg viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-3-3L5 17v3zM13.5 6.5l3 3"/></svg></button>
       <button class="icon-btn" id="btnDeleteSession" title="Delete session"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
     <table class="sb-stats" id="sbStats"></table>
@@ -933,7 +946,11 @@
     if (!state.sessions.length) state.sessions.push({ id: uid(), name: 'Session 1', event: '333', solves: [] });
     if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
     // every solve belongs to the event it was done in; older data inherits the session's event
-    for (const ses of state.sessions) for (const sv of ses.solves) if (!EVENTS[sv.event]) sv.event = ses.event;
+    for (const ses of state.sessions) {
+      if (ses.type !== 'comp') ses.type = 'normal';
+      if (typeof ses.target !== 'number' || !(ses.target > 0)) ses.target = null;
+      for (const sv of ses.solves) if (!EVENTS[sv.event]) sv.event = ses.event;
+    }
     delete state.precision;
     if (typeof state.showImage !== 'boolean') state.showImage = true;
     if (typeof state.showStats !== 'boolean') state.showStats = true;
@@ -946,6 +963,21 @@
   const solves = allSolves; // a session keeps all its times whatever event is selected
   const event = () => EVENTS[session().event];
   const inspectionActive = () => state.inspection && event().insp;
+  const isComp = () => session().type === 'comp';
+  // competition simulation: solves are grouped into rounds (ao5, or mo3 for mean-of-3 events)
+  const roundSize = () => event().fmt === 'mo3' ? 3 : 5;
+  const roundFn = () => event().fmt === 'mo3' ? meanOf : average;
+  const roundLabel = () => event().fmt === 'mo3' ? 'mo3' : 'ao5';
+  function rounds(list) {
+    const n = roundSize(), out = [];
+    for (let i = 0; i < list.length; i += n) {
+      const sl = list.slice(i, i + n);
+      out.push({ no: out.length + 1, start: i, solves: sl, avg: sl.length === n ? roundFn()(sl) : null });
+    }
+    if (!out.length || out[out.length - 1].solves.length === n) out.push({ no: out.length + 1, start: list.length, solves: [], avg: null });
+    return out;
+  }
+  const hitTarget = avg => session().target != null && avg != null && isFinite(avg) && avg <= session().target;
 
   // =====================================================================
   //  Formatting & statistics
@@ -1066,6 +1098,30 @@
     });
   }
   el.modalBg.addEventListener('click', e => { if (e.target === el.modalBg) closeDialog(null); });
+  // sessionForm({ title, name, type, target, ok }) -> Promise<{ name, type, target } | null>
+  function sessionForm(o) {
+    return new Promise(resolve => {
+      dialogResolve = resolve;
+      openDialog(`<h2>${esc(o.title)}</h2>
+        <div class="form">
+          <label>Session name<input class="field" id="sfName" type="text" maxlength="40" value="${esc(o.name || '')}" placeholder="Session name"></label>
+          <label>Session type<select class="field" id="sfType"><option value="normal"${o.type !== 'comp' ? ' selected' : ''}>Normal</option><option value="comp"${o.type === 'comp' ? ' selected' : ''}>Comp sim (rounds of 5)</option></select></label>
+          <label id="sfTargetWrap"${o.type === 'comp' ? '' : ' hidden'}>Target average<input class="field" id="sfTarget" type="text" inputmode="decimal" value="${o.target != null ? fmt(o.target) : ''}" placeholder="e.g. 12.34 or 1234"><span class="hint">Each round of 5 solves is compared with this ao5 (mo3 rounds of 3 for 6x6, 7x7 and blindfolded).</span></label>
+        </div>
+        <div class="actions"><button id="dlgCancel">Cancel</button><button id="dlgOk" class="primary">${esc(o.ok || 'Save')}</button></div>`);
+      const name = $('sfName'), type = $('sfType'), target = $('sfTarget');
+      type.addEventListener('change', () => { $('sfTargetWrap').hidden = type.value !== 'comp'; if (type.value === 'comp') target.focus(); });
+      const ok = () => {
+        let t = null;
+        if (type.value === 'comp' && target.value.trim()) { const r = parseTyped(target.value); if (!r || r.penalty) { target.select(); return; } t = r.ms; }
+        closeDialog({ name: name.value.trim(), type: type.value, target: t });
+      };
+      $('dlgOk').addEventListener('click', ok);
+      $('dlgCancel').addEventListener('click', () => closeDialog(null));
+      for (const inp of [name, target]) inp.addEventListener('keydown', e => { if (e.key === 'Enter') ok(); e.stopPropagation(); });
+      name.focus(); name.select();
+    });
+  }
 
   // =====================================================================
   //  Scrambles with history (previous / next)
@@ -1306,7 +1362,7 @@
   const tile = (label, value) => `<div class="stat"><div class="l">${label}</div><div class="v${value === 'DNF' ? ' dnf' : ''}">${value}</div></div>`;
   const sbRow = (label, value) => `<span class="l">${label}</span><span class="v${value === 'DNF' ? ' dnf' : ''}">${value}</span>`;
   function renderSessionSelect() {
-    el.sessionSel.innerHTML = state.sessions.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    el.sessionSel.innerHTML = state.sessions.map(s => `<option value="${s.id}">${esc(s.name)}${s.type === 'comp' ? ' (comp)' : ''}</option>`).join('');
     el.sessionSel.value = state.current;
     $('btnDeleteSession').disabled = state.sessions.length <= 1;
   }
@@ -1325,14 +1381,36 @@
     for (const n of availableAvgs(list)) trs.push(avgRow('ao', n));
     el.sbStats.innerHTML = `<thead><tr><th></th><th>current</th><th>best</th></tr></thead><tbody>${trs.join('')}</tbody>`;
     const solved = list.filter(s => s.penalty !== 'DNF').length;
-    el.sbSummary.innerHTML = `Solves: <span class="mono">${solved}/${list.length}</span><br>mean: <span class="mono">${dash(mean(list))}</span>`;
-    const line = (k, v, first) => `<div class="${first ? 'first' : ''}${v === '–' ? '' : ' link'}" data-avg="${k}"><span class="k">${k}: </span><span class="v${v === 'DNF' ? ' dnf' : ''}">${v}</span></div>`;
-    el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
+    let summary = `Solves: <span class="mono">${solved}/${list.length}</span><br>mean: <span class="mono">${dash(mean(list))}</span>`;
+    const rs = isComp() ? rounds(list) : null;
+    if (rs) {
+      const done = rs.filter(r => r.avg != null), hits = done.filter(r => hitTarget(r.avg)).length;
+      summary += `<br>target: <span class="mono target">${session().target != null ? fmt(session().target) : '–'}</span>`;
+      summary += `<br>rounds under target: <span class="mono">${session().target != null ? `${hits}/${done.length}` : done.length}</span>`;
+    }
+    el.sbSummary.innerHTML = summary;
+    const line = (k, v, first, extra = '') => `<div class="${first ? 'first' : ''}${v === '–' ? '' : ' link'}" data-avg="${k}"${extra}><span class="k">${k}: </span><span class="v${v === 'DNF' ? ' dnf' : ''}">${v}</span></div>`;
+    if (rs) {
+      const curR = rs[rs.length - 1], last = [...rs].reverse().find(r => r.avg != null);
+      const cls = last ? (session().target == null ? '' : hitTarget(last.avg) ? ' hit' : ' miss') : '';
+      el.centerStats.innerHTML = `<div class="first"><span class="k">round ${curR.no}: </span><span class="v">${curR.solves.length}/${roundSize()}</span></div>`
+        + (last ? `<div class="link${cls}" data-avg="${roundLabel()}" data-start="${last.start}"><span class="k">round ${last.no} ${roundLabel()}: </span><span class="v${last.avg === Infinity ? ' dnf' : ''}">${dash(last.avg)}</span></div>` : `<div><span class="k">${roundLabel()}: </span><span class="v">–</span></div>`);
+    } else {
+      el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
+    }
 
     if (!list.length) el.timesList.innerHTML = '<div class="empty">No solves in this session yet.<br>Hold space to start.</div>';
     else {
       const rows = [];
+      const roundHead = r => {
+        const open = r.avg == null, cls = open ? 'open' : session().target == null ? '' : hitTarget(r.avg) ? 'hit' : 'miss';
+        const val = open ? `${r.solves.length}/${roundSize()}` : dash(r.avg);
+        return `<tr class="round-head ${cls}" data-start="${r.start}"${open ? '' : ' data-avg="' + roundLabel() + '"'}><td colspan="4">Round ${r.no}<span class="r-avg">${open ? val : roundLabel() + ' ' + val}</span></td></tr>`;
+      };
+      let roundStarts = null;
+      if (rs) { roundStarts = new Map(); for (const r of rs) if (r.solves.length) roundStarts.set(r.start + r.solves.length - 1, r); }
       for (let i = list.length - 1; i >= 0; i--) {
+        if (roundStarts && roundStarts.has(i)) rows.push(roundHead(roundStarts.get(i)));
         const s = list[i];
         let extra;
         const avgCell = (kind, n) => {
@@ -1350,6 +1428,8 @@
   }
   function parseAvg(str) { return { kind: str.slice(0, 2), n: +str.slice(2) }; }
   el.timesList.addEventListener('click', e => {
+    const head = e.target.closest('tr.round-head[data-avg]');
+    if (head) { const { kind, n } = parseAvg(head.dataset.avg); openAverage(+head.dataset.start, n, kind); return; }
     const cell = e.target.closest('td[data-avg]');
     if (cell) { const { kind, n } = parseAvg(cell.dataset.avg); openAverage(+cell.dataset.end - n + 1, n, kind); return; }
     const tr = e.target.closest('tr[data-id]'); if (tr) openSolve(tr.dataset.id);
@@ -1366,7 +1446,8 @@
     const line = e.target.closest('[data-avg]');
     if (!line) return;
     const { kind, n } = parseAvg(line.dataset.avg);
-    if (solves().length >= n) openAverage(solves().length - n, n, kind);
+    if (line.dataset.start !== undefined) openAverage(+line.dataset.start, n, kind);
+    else if (solves().length >= n) openAverage(solves().length - n, n, kind);
   });
 
   // ---- average details: the solves that make up an average, with scrambles ----
@@ -1436,12 +1517,20 @@
     rows.push(statRow('ao5', dash(lastN(list, 5, average)), 'current'), statRow('Best ao5', dash(bestN(list, 5, average))),
       statRow('ao12', dash(lastN(list, 12, average)), 'current'), statRow('Best ao12', dash(bestN(list, 12, average))));
     for (const n of availableAvgs(list)) rows.push(statRow(`ao${n}`, dash(lastN(list, n, average)), 'current'), statRow(`Best ao${n}`, dash(bestN(list, n, average))));
-    openDialog(`<h2>Statistics · ${esc(session().name)} · ${esc(ev.name)}</h2>
+    let roundsHtml = '';
+    if (isComp()) {
+      const rs = rounds(list).filter(r => r.solves.length);
+      const rrows = rs.map(r => { const open = r.avg == null, cls = open ? '' : session().target == null ? '' : hitTarget(r.avg) ? ' style="color:var(--ready)"' : ' style="color:var(--hold)"'; return `<div class="row${open ? '' : ' link'}"${open ? '' : ` data-avg="${roundLabel()}" data-start="${r.start}"`}><div>Round ${r.no}<div class="sub">${r.solves.map(fmtSolve).join(', ')}</div></div><div class="value"${cls}>${open ? `${r.solves.length}/${roundSize()}` : dash(r.avg)}</div></div>`; }).reverse();
+      roundsHtml = `<div class="section-title">Rounds${session().target != null ? ` · target ${fmt(session().target)}` : ''}</div><div class="group" id="roundsList">${rrows.join('') || '<div class="row"><div class="sub">No rounds yet</div></div>'}</div>`;
+    }
+    openDialog(`<h2>Statistics · ${esc(session().name)} · ${esc(ev.name)}</h2>${roundsHtml}
       <div class="chart-wrap" id="chartWrap"><svg id="chart" viewBox="0 0 ${CH.w} ${CH.h}" preserveAspectRatio="none" role="img" aria-label="Session times chart"></svg>
       <div class="chart-legend"><span><i style="background:#4f8cff"></i>time</span><span><i style="background:#c97a1c"></i>ao12</span></div><div class="chart-tip" id="chartTip"></div></div>
       <div class="section-title">Statistics</div><div class="group">${rows.join('')}</div>
       <div class="actions"><button class="primary" id="dlgClose">Close</button></div>`, 'wide');
     $('dlgClose').addEventListener('click', () => closeDialog());
+    const rl = $('roundsList');
+    if (rl) rl.addEventListener('click', e => { const row = e.target.closest('.row[data-avg]'); if (row) { const { kind, n } = parseAvg(row.dataset.avg); openAverage(+row.dataset.start, n, kind); } });
     renderChart($('chart'), list);
     const svg = $('chart'), tip = $('chartTip'), wrap = $('chartWrap');
     const nearest = e => { const rect = svg.getBoundingClientRect(), px = (e.clientX - rect.left) / rect.width * CH.w; let b = chartPts[0]; for (const p of chartPts) if (Math.abs(p.x - px) < Math.abs(b.x - px)) b = p; return { b, rect }; };
@@ -1537,16 +1626,17 @@
   }
   el.sessionSel.addEventListener('change', () => { switchSession(el.sessionSel.value); el.sessionSel.blur(); });
   $('btnNewSession').addEventListener('click', async () => {
-    const name = await ask({ title: 'New session', input: 'Session name', value: `Session ${state.sessions.length + 1}`, ok: 'Create' });
-    if (name === null) return;
-    const s = { id: uid(), name: name || `Session ${state.sessions.length + 1}`, event: session().event, solves: [] };
+    const r = await sessionForm({ title: 'New session', name: `Session ${state.sessions.length + 1}`, type: 'normal', ok: 'Create' });
+    if (!r) return;
+    const s = { id: uid(), name: r.name || `Session ${state.sessions.length + 1}`, type: r.type, target: r.target, event: session().event, solves: [] };
     state.sessions.push(s);
     switchSession(s.id);
   });
   $('btnRename').addEventListener('click', async () => {
-    const name = await ask({ title: 'Rename session', input: 'Session name', value: session().name, ok: 'Save' });
-    if (!name) return;
-    session().name = name; save(); render();
+    const cur = session();
+    const r = await sessionForm({ title: 'Edit session', name: cur.name, type: cur.type, target: cur.target, ok: 'Save' });
+    if (!r) return;
+    cur.name = r.name || cur.name; cur.type = r.type; cur.target = r.target; save(); render();
   });
   $('btnDeleteSession').addEventListener('click', async () => {
     if (state.sessions.length <= 1) return;
