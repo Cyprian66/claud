@@ -1405,7 +1405,7 @@
       const roundHead = r => {
         const open = r.avg == null, cls = open ? 'open' : session().target == null ? '' : hitTarget(r.avg) ? 'hit' : 'miss';
         const val = open ? `${r.solves.length}/${roundSize()}` : dash(r.avg);
-        return `<tr class="round-head ${cls}" data-start="${r.start}"${open ? '' : ' data-avg="' + roundLabel() + '"'}><td colspan="4">Round ${r.no}<span class="r-avg">${open ? val : roundLabel() + ' ' + val}</span></td></tr>`;
+        return `<tr class="round-head ${cls}" data-start="${r.start}"${open ? '' : ' data-avg="' + roundLabel() + '"'}><td colspan="3">Round ${r.no}<span class="r-avg">${open ? val : roundLabel() + ' ' + val}</span></td></tr>`;
       };
       let roundStarts = null;
       if (rs) { roundStarts = new Map(); for (const r of rs) if (r.solves.length) roundStarts.set(r.start + r.solves.length - 1, r); }
@@ -1418,11 +1418,14 @@
           const v = (kind === 'mo' ? meanOf : average)(list.slice(i - n + 1, i + 1));
           return `<td class="time link" data-avg="${kind}${n}" data-end="${i}">${fmt(v)}</td>`;
         };
-        extra = ev.fmt === 'ao' ? avgCell('ao', 5) + avgCell('ao', 12) : avgCell('mo', 3) + avgCell('ao', 5);
+        // comp sim: only the round metric column (ao5, or mo3 for mean-of-3 events)
+        extra = rs ? (ev.fmt === 'ao' ? avgCell('ao', 5) : avgCell('mo', 3))
+          : ev.fmt === 'ao' ? avgCell('ao', 5) + avgCell('ao', 12) : avgCell('mo', 3) + avgCell('ao', 5);
         const cls = best && s.id === best.id ? ' best' : (s.penalty === 'DNF' || (worst && s.id === worst.id && list.length > 1)) ? ' worst' : '';
         rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${cls}">${fmtSolve(s)}</td>${extra}</tr>`);
       }
-      const head = ev.fmt === 'ao' ? '<th>time</th><th>ao5</th><th>ao12</th>' : '<th>time</th><th>mo3</th><th>ao5</th>';
+      const head = rs ? (ev.fmt === 'ao' ? '<th>time</th><th>ao5</th>' : '<th>time</th><th>mo3</th>')
+        : ev.fmt === 'ao' ? '<th>time</th><th>ao5</th><th>ao12</th>' : '<th>time</th><th>mo3</th><th>ao5</th>';
       el.timesList.innerHTML = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
   }

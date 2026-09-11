@@ -29,7 +29,7 @@ Każda sesja ma własną nazwę i listę czasów. Zmiana konkurencji nie zmienia
 
 Przy tworzeniu lub edycji sesji (ikona ołówka) wybierasz typ **Normal** albo **Comp sim** i wpisujesz cel, np. `12.34` lub `1234`. W sesji comp sim:
 
-- lista czasów dzieli się na **rundy po 5 ułożeń** (po 3 dla 6x6, 7x7 i konkurencji bez patrzenia, gdzie na zawodach liczy się mo3), każda z nagłówkiem i swoim ao5 / mo3,
+- lista czasów dzieli się na **rundy po 5 ułożeń** (po 3 dla 6x6, 7x7 i konkurencji bez patrzenia, gdzie na zawodach liczy się mo3), każda z nagłówkiem i swoim ao5 / mo3 (lista nie pokazuje wtedy kolumny ao12),
 - ao5 rundy jest zielone, gdy jest równe celowi lub lepsze, czerwone, gdy gorsze,
 - pod zegarem widać postęp bieżącej rundy (np. „round 3: 2/5”) i wynik ostatniej ukończonej,
 - w panelu po lewej jest cel i licznik rund poniżej celu, a okno statystyk ma listę wszystkich rund,
