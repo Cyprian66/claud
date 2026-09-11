@@ -5,7 +5,16 @@ Timer do speedcubingu bez zależności i bez budowania. Dwa układy korzystając
 - `index.html` – wersja na komputer w układzie csTimera,
 - `mobile.html` – wersja na telefon: pastylka z sesją i konkurencją u góry, scramble, duży zegar obsługiwany dotykiem (przytrzymaj, puść gdy zielony, dotknij aby zatrzymać), karty z obrazkiem scramble i średnimi, a na dole zakładki Timer / Times / Stats / Settings. Okna (statystyki, ustawienia, sesje, średnie) otwierają się jako arkusze od dołu.
 
-Wystarczy otworzyć odpowiedni plik w przeglądarce (oba muszą leżeć obok `cube-timer.js`).
+Wystarczy otworzyć odpowiedni plik w przeglądarce (oba muszą leżeć obok `cube-timer.js`). Otwarcie `index.html` na telefonie przekierowuje do wersji mobilnej; w ustawieniach obu wersji jest link do drugiej.
+
+## Otwieranie z GitHuba (GitHub Pages)
+
+Workflow `.github/workflows/pages.yml` publikuje stronę przy każdym pushu na gałąź timera. Po pierwszym uruchomieniu (zakładka **Actions**) strona jest dostępna pod:
+
+- komputer: `https://cyprian66.github.io/claud/`
+- telefon: `https://cyprian66.github.io/claud/mobile.html`
+
+Jeśli workflow zgłosi brak włączonych Pages, włącz je raz ręcznie: **Settings → Pages → Build and deployment → Source: GitHub Actions**, a potem uruchom workflow ponownie (Actions → Deploy to GitHub Pages → Run workflow).
 
 ## Układ (wersja na komputer)
 

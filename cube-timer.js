@@ -1336,6 +1336,9 @@
         ${sw('optStats', 'Averages under the timer', 'ao5 / ao12 (mo3 / ao5 for mean-of-3 events)', state.showStats)}
         ${sw('optDiff', 'Difference to previous solve', 'Green when faster, red when slower', state.showDiff)}
       </div>
+      <div class="section-title">Layout</div><div class="group">
+        ${/mobile\.html$/.test(location.pathname) ? '<a class="row" href="index.html?desktop" style="text-decoration:none"><div>Desktop version<div class="sub">csTimer-style layout for computers</div></div><div class="sub">›</div></a>' : '<a class="row" href="mobile.html" style="text-decoration:none"><div>Phone version<div class="sub">Touch timer with bottom tabs</div></div><div class="sub">›</div></a>'}
+      </div>
       <div class="section-title">Shortcuts</div><div class="group">
         <div class="row"><div>Start</div><div class="sub">hold <span class="kbd">Space</span>, release when green</div></div>
         <div class="row"><div>Stop</div><div class="sub">any key</div></div>
