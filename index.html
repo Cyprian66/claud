@@ -64,7 +64,7 @@
   .icon-btn.big { width: 40px; height: 40px; } .icon-btn.big svg { width: 22px; height: 22px; }
 
   /* ---------- layout ---------- */
-  .app { height: 100%; min-width: 1000px; display: grid; grid-template-columns: 330px 1fr; }
+  .app { height: 100%; display: grid; grid-template-columns: 330px minmax(0, 1fr); }
   .sidebar {
     background: var(--panel);
     border-right: 1px solid var(--border);
@@ -105,7 +105,7 @@
   .times td.dnf { color: var(--hold); }
   .times .empty { padding: 40px 12px; color: var(--muted); text-align: center; line-height: 1.5; }
 
-  .main { display: flex; flex-direction: column; min-height: 0; position: relative; transition: background 0.15s; }
+  .main { display: flex; flex-direction: column; min-height: 0; min-width: 0; position: relative; transition: background 0.15s; }
   .main.holding { background: #22111a; }
   .main.ready { background: #0d2419; }
   .main.inspecting { background: #10121c; }
@@ -131,11 +131,11 @@
   .scramble.long { font-size: clamp(16px, 1.75vw, 30px); letter-spacing: 0.02em; }
   .scramble.multi { text-align: left; font-size: clamp(15px, 1.5vw, 24px); line-height: 1.45; max-width: 1000px; margin: 0 auto; letter-spacing: 0; }
   .scramble.hidden-during-solve { visibility: hidden; }
-  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 16px 60px; }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 16px 40px; }
   .timer {
     font-family: var(--mono);
     font-weight: 600;
-    font-size: clamp(90px, 13vw, 240px);
+    font-size: clamp(72px, 13vw, 240px);
     line-height: 1;
     letter-spacing: -0.02em;
     font-variant-numeric: tabular-nums;
@@ -182,10 +182,20 @@
   .center-stats .link:hover { background: var(--card); }
   td.link { cursor: pointer; }
   td.link:hover { text-decoration: underline; }
-  .avg-row { cursor: pointer; }
-  .avg-row:hover { background: var(--card-2); }
-  .avg-scr { flex: 1; font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: pre-line; line-height: 1.5; }
-  textarea.copy { width: 100%; background: var(--card-2); color: var(--text); border: 1px solid transparent; border-radius: 9px; padding: 8px 10px; font-family: var(--mono); font-size: 12px; resize: vertical; line-height: 1.5; white-space: pre; overflow: auto; -webkit-user-select: text; user-select: text; }
+  table.avg { width: 100%; border-collapse: collapse; font-size: 16px; }
+  table.avg th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 12px; border-bottom: 1px solid var(--card-2); }
+  table.avg td { padding: 10px 12px; border-bottom: 1px solid var(--card-2); vertical-align: top; }
+  table.avg tr:last-child td { border-bottom: 0; }
+  table.avg tbody tr { cursor: pointer; }
+  table.avg tbody tr:hover { background: var(--card-2); }
+  table.avg td.no { color: var(--muted); width: 56px; font-family: var(--mono); }
+  table.avg td.t { font-family: var(--mono); font-weight: 600; font-size: 18px; white-space: nowrap; width: 110px; font-variant-numeric: tabular-nums; }
+  table.avg td.t.trim { color: var(--muted); font-weight: 500; }
+  table.avg td.t.dnf { color: var(--hold); }
+  table.avg td.s { font-family: var(--mono); font-size: 15px; line-height: 1.6; white-space: pre-line; letter-spacing: 0.02em; }
+  .avg-summary { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 14px; font-size: 15px; color: var(--muted); }
+  .avg-summary b { color: var(--text); font-family: var(--mono); font-weight: 600; }
+  textarea.copy { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--card-2); border-radius: 12px; padding: 12px 14px; font-family: var(--mono); font-size: 14px; resize: vertical; line-height: 1.6; white-space: pre; overflow: auto; -webkit-user-select: text; user-select: text; min-height: 200px; }
 
   .panel { background: var(--card); border-radius: var(--radius); }
   .panel.image {
@@ -204,12 +214,12 @@
     width: min(440px, 100%); max-height: 90vh; overflow-y: auto; padding: 20px;
     -webkit-user-select: text; user-select: text;
   }
-  .dialog.wide { width: min(820px, 100%); }
-  .dialog h2 { margin: 0 0 12px; font-size: 18px; }
+  .dialog.wide { width: min(960px, 100%); }
+  .dialog h2 { margin: 0 0 14px; font-size: 22px; }
   .dialog p { margin: 0 0 14px; color: var(--muted); line-height: 1.5; }
-  .dialog .big { font-family: var(--mono); font-weight: 600; font-size: 44px; text-align: center; margin: 4px 0 8px; }
+  .dialog .big { font-family: var(--mono); font-weight: 600; font-size: 56px; text-align: center; margin: 4px 0 10px; }
   .dialog .big.dnf { color: var(--hold); }
-  .dialog .scr { font-family: var(--mono); color: var(--muted); font-size: 13px; line-height: 1.6; white-space: pre-line; text-align: center; margin: 0 auto 14px; }
+  .dialog .scr { font-family: var(--mono); color: var(--text); font-size: 17px; line-height: 1.7; white-space: pre-line; text-align: center; margin: 0 auto 16px; background: var(--panel); border-radius: 12px; padding: 12px 16px; letter-spacing: 0.03em; }
   .dialog .preview svg { width: 100%; max-height: 240px; display: block; margin: 0 auto 14px; }
   .dialog .zoom svg { width: 100%; max-height: 70vh; display: block; }
   .dialog .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 16px; }
@@ -242,6 +252,10 @@
   .chart-tip { position: absolute; pointer-events: none; background: var(--card-2); color: var(--text); padding: 6px 9px; border-radius: 8px; font-size: 12px; font-family: var(--mono); white-space: nowrap; transform: translate(-50%, -110%); display: none; }
   .kbd { font-family: var(--mono); background: var(--card-2); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
 
+  @media (max-width: 1250px) {
+    .panel.image { width: 200px; height: 200px; padding: 10px; }
+    .center-stats { font-size: clamp(28px, 3.4vw, 48px); }
+  }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
 </head>
@@ -1338,17 +1352,20 @@
       for (let k = 0; k < trim; k++) { trimmed.add(order[k].i); trimmed.add(order[order.length - 1 - k].i); }
     }
     const rows = win.map((s, i) => {
-      const t = fmtSolve(s), shown = trimmed.has(i) ? `(${t})` : t;
-      return `<div class="row avg-row" data-id="${s.id}"><div class="value${s.penalty === 'DNF' ? ' dnf' : ''}" style="min-width:80px">${shown}</div><div class="avg-scr">${esc(s.scramble)}</div><div class="sub" style="flex:none">#${start + i + 1}</div></div>`;
+      const t = fmtSolve(s), isTrim = trimmed.has(i);
+      return `<tr data-id="${s.id}"><td class="no">${start + i + 1}</td><td class="t${isTrim ? ' trim' : ''}${s.penalty === 'DNF' ? ' dnf' : ''}">${isTrim ? `(${t})` : t}</td><td class="s">${esc(s.scramble)}</td></tr>`;
     });
-    const text = [`${label}: ${dash(value)}`, ...win.map((s, i) => `${start + i + 1}. ${trimmed.has(i) ? `(${fmtSolve(s)})` : fmtSolve(s)}   ${s.scramble.replace(/\n/g, ' / ')}`)].join('\n');
-    openDialog(`<h2>${label}: <span class="${value === Infinity ? 'dnf' : ''}" style="font-family:var(--mono)">${dash(value)}</span> <span style="color:var(--muted);font-weight:400;font-size:14px">· solves ${start + 1}–${start + n}</span></h2>
-      <div class="group">${rows.join('')}</div>
-      <div class="section-title">Copy</div><textarea class="field copy" readonly rows="4">${esc(text)}</textarea>
+    const times = win.map((s, i) => trimmed.has(i) ? `(${fmtSolve(s)})` : fmtSolve(s)).join(', ');
+    const text = [`${label}: ${dash(value)} = ${times}`, '', ...win.map((s, i) => `${start + i + 1}. ${trimmed.has(i) ? `(${fmtSolve(s)})` : fmtSolve(s)}   ${s.scramble.replace(/\n/g, ' / ')}`)].join('\n');
+    const wb = bestSolve(win), ww = worstSolve(win);
+    openDialog(`<h2>${label}: <span class="${value === Infinity ? 'dnf' : ''}" style="font-family:var(--mono)">${dash(value)}</span></h2>
+      <div class="avg-summary"><span>Solves <b>${start + 1}–${start + n}</b></span><span>Best <b>${wb ? fmtSolve(wb) : '–'}</b></span><span>Worst <b>${ww ? fmtSolve(ww) : '–'}</b></span><span>Mean <b>${dash(mean(win))}</b></span>${kind === 'ao' ? '<span>Times in parentheses are trimmed</span>' : ''}</div>
+      <div class="group"><table class="avg"><thead><tr><th>#</th><th>Time</th><th>Scramble</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
+      <div class="section-title">Copy</div><textarea class="copy" readonly rows="8">${esc(text)}</textarea>
       <div class="actions"><button id="dlgCopy">Copy to clipboard</button><button class="primary" id="dlgClose">Close</button></div>`, 'wide');
     $('dlgClose').addEventListener('click', () => closeDialog());
     $('dlgCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(text); $('dlgCopy').textContent = 'Copied'; } catch (e) { el.dialog.querySelector('textarea').select(); } });
-    el.dialog.querySelectorAll('.avg-row').forEach(r => r.addEventListener('click', () => openSolve(r.dataset.id)));
+    el.dialog.querySelectorAll('table.avg tbody tr').forEach(r => r.addEventListener('click', () => openSolve(r.dataset.id)));
   }
 
   // ---- solve details ----
@@ -1356,11 +1373,11 @@
     const s = solves().find(x => x.id === id);
     if (!s) return;
     const idx = solves().indexOf(s) + 1;
-    openDialog(`<h2>Solve #${idx} <span style="color:var(--muted);font-weight:400;font-size:14px">· ${new Date(s.date).toLocaleString('en-GB')}</span></h2>
+    openDialog(`<h2>Solve #${idx} <span style="color:var(--muted);font-weight:400;font-size:15px">· ${new Date(s.date).toLocaleString('en-GB')}</span></h2>
       <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
       <div class="scr">${esc(s.scramble)}</div>
       <div class="preview">${state.showImage ? scrambleSvg(session().event, s.scramble) : ''}</div>
-      <div class="actions" id="solveActions"></div>`);
+      <div class="actions" id="solveActions"></div>`, 'wide');
     const actions = $('solveActions');
     actions.append(penaltyButtons(s, () => openSolve(id)));
     const spacer = document.createElement('span'); spacer.className = 'spacer';
