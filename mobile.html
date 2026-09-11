@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#000000">
+<title>Cube Timer</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600&display=swap">
+<style>
+  :root {
+    --bg: #000000;
+    --panel: #141416;
+    --card: #1c1c1e;
+    --card-2: #2c2c2e;
+    --text: #ffffff;
+    --muted: #8e8e93;
+    --accent: #4f8cff;
+    --ready: #34d399;
+    --hold: #ff5c5c;
+    --border: #262629;
+    --radius: 18px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, system-ui, sans-serif;
+    --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+    --tabs-h: 62px;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px;
+    -webkit-user-select: none; user-select: none; -webkit-tap-highlight-color: transparent; overflow: hidden;
+    overscroll-behavior: none;
+  }
+  button, select, input, textarea { font-family: var(--font); color: var(--text); font-size: 15px; }
+  button { background: none; border: 0; cursor: pointer; padding: 0; }
+  select.field, input.field {
+    width: 100%; background: var(--card-2); border: 1px solid transparent; border-radius: 10px; padding: 9px 32px 9px 12px;
+    color: var(--text); font-weight: 500; appearance: none; -webkit-appearance: none;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat;
+    font-size: 16px;
+  }
+  input.field { background-image: none; padding-right: 12px; -webkit-user-select: text; user-select: text; }
+  .icon-btn { width: 40px; height: 40px; border-radius: 12px; display: inline-flex; align-items: center; justify-content: center; color: var(--muted); flex: none; }
+  .icon-btn:active { background: var(--card-2); color: var(--text); }
+  .icon-btn:disabled { opacity: 0.3; }
+  .icon-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+  /* ---------- app frame ---------- */
+  .app { height: 100%; display: grid; grid-template-rows: auto 1fr var(--tabs-h); }
+  .top { padding: 10px 14px 4px; padding-top: max(10px, env(safe-area-inset-top)); display: flex; justify-content: center; }
+  .pill { display: flex; align-items: center; background: var(--card); border-radius: 14px; overflow: hidden; max-width: 100%; }
+  .pill select { background-color: transparent; border: 0; border-radius: 0; font-size: 17px; font-weight: 500; padding: 11px 30px 11px 14px; width: auto; max-width: 52vw; text-overflow: ellipsis; }
+  .pill select#sessionSel { color: var(--text); border-right: 1px solid var(--card-2); }
+  .pill select#eventSel { color: var(--accent); background-image: linear-gradient(45deg, transparent 50%, var(--accent) 50%), linear-gradient(135deg, var(--accent) 50%, transparent 50%); }
+  .pill .relay-events { color: var(--accent); font-weight: 500; padding: 11px 14px; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 55vw; }
+
+  .body { min-height: 0; position: relative; }
+  .view { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+  #main { display: flex; flex-direction: column; transition: background 0.15s; overflow: hidden; }
+  #main.holding { background: #22111a; }
+  #main.ready { background: #0d2419; }
+  #main.inspecting { background: #10121c; }
+
+  /* scramble */
+  .scr-bar { padding: 6px 12px 0; flex: none; }
+  .scr-controls { display: flex; justify-content: center; gap: 8px; font-family: var(--mono); font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+  .scr-controls .link { color: var(--accent); font-family: var(--mono); font-size: 13px; padding: 4px 6px; }
+  .scr-controls .link:disabled { color: var(--muted); }
+  .scr-line { display: flex; align-items: center; gap: 6px; }
+  .scramble {
+    flex: 1; min-width: 0; font-family: var(--mono); font-weight: 500; font-size: clamp(15px, 4.6vw, 22px); line-height: 1.55;
+    text-align: center; white-space: pre-line; overflow-wrap: anywhere; padding: 4px 2px; letter-spacing: 0.03em;
+  }
+  .scramble.long { font-size: clamp(13px, 3.7vw, 17px); letter-spacing: 0.01em; line-height: 1.45; }
+  .scramble.xlong { font-size: clamp(11px, 3vw, 14px); letter-spacing: 0; line-height: 1.4; }
+  .scramble.multi { text-align: center; font-size: clamp(11px, 3.1vw, 14px); line-height: 1.4; letter-spacing: 0; }
+  .scramble.hidden-during-solve { visibility: hidden; }
+  .relay-arrow { flex: none; width: 44px; height: 56px; border-radius: 12px; background: var(--card); color: var(--muted); display: none; align-items: center; justify-content: center; }
+  .relay-arrow svg { width: 26px; height: 26px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .relay-arrow:active { background: var(--card-2); color: var(--text); }
+  .relay-arrow:disabled { opacity: 0.25; }
+  .scr-bar.relay .relay-arrow { display: inline-flex; }
+  .relay-label { display: none; text-align: center; color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .relay-label b { color: var(--text); }
+  .relay-label .dots { margin-left: 8px; letter-spacing: 3px; color: var(--card-2); }
+  .relay-label .dots .on { color: var(--accent); }
+  .scr-bar.relay .relay-label { display: block; }
+
+  /* stage */
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; padding: 8px 14px; }
+  .entry-row, .entry-side { display: contents; }
+  .stage.typing .entry-row { display: flex; flex-direction: column; align-items: center; gap: 14px; width: 100%; }
+  .stage.typing .entry-side { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .entry-box { width: 100%; min-height: 120px; background: var(--card); border: 1px solid #3a3a3d; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 10px 14px; }
+  .entry-box input { width: 100%; background: transparent; border: 0; outline: none; text-align: center; font-family: var(--mono); font-weight: 600; font-size: clamp(40px, 14vw, 64px); color: var(--text); font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text; }
+  .entry-box input::placeholder { color: #3a3a3d; }
+  .timer-row { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .timer { font-family: var(--mono); font-weight: 600; font-size: clamp(64px, 24vw, 120px); line-height: 1; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; transition: color 0.1s; }
+  .timer-row.small .timer { font-size: clamp(36px, 12vw, 56px); }
+  .holding .timer { color: var(--hold); } .ready .timer { color: var(--ready); } .inspecting .timer { color: var(--accent); }
+  .diff { font-family: var(--mono); font-weight: 600; font-size: clamp(16px, 5vw, 24px); font-variant-numeric: tabular-nums; min-height: 1.2em; }
+  .diff.better { color: var(--ready); } .diff.worse { color: var(--hold); } .diff.same { color: var(--muted); }
+  .penalty-bar { display: flex; gap: 8px; min-height: 36px; align-items: center; }
+  .penalty-bar button { background: var(--card); border-radius: 10px; padding: 8px 14px; font-weight: 500; }
+  .penalty-bar button.primary { background: var(--accent); color: #fff; }
+  .penalty-bar button.danger { color: var(--hold); }
+  .center-stats { text-align: center; font-size: clamp(20px, 6.2vw, 30px); line-height: 1.35; font-weight: 600; }
+  .center-stats .k { color: var(--muted); } .center-stats .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .center-stats .first .v { color: var(--ready); } .center-stats .dnf { color: var(--hold); }
+  .center-stats .hit .v { color: var(--ready); } .center-stats .miss .v { color: var(--hold); }
+  .center-stats .bpa { font-size: 0.6em; } .center-stats .bpa .v.ok { color: var(--ready); }
+  .center-stats .link { border-radius: 10px; padding: 0 10px; }
+
+  /* bottom cards */
+  .cards { flex: none; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 6px 14px 12px; }
+  .cards.one { grid-template-columns: 1fr; }
+  .panel { background: var(--card); border-radius: var(--radius); min-height: 150px; display: flex; align-items: center; justify-content: center; padding: 12px; }
+  .panel.image svg { width: 100%; height: 100%; max-height: 150px; display: block; }
+  .panel.tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 8px; align-items: center; padding: 12px 10px; }
+  .tile { text-align: center; } .tile .l { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .tile .v { font-family: var(--mono); font-weight: 600; font-size: clamp(16px, 5.4vw, 24px); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .tile .v.dnf { color: var(--hold); }
+  .panel.tiles .divider { grid-column: 1 / -1; height: 1px; background: var(--card-2); }
+
+  /* times view */
+  #timesView { padding: 0 14px 16px; }
+  .sb-session { display: flex; align-items: center; gap: 6px; padding: 12px 0 6px; }
+  .sb-session .lbl { flex: 1; color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .sb-session .text-btn { background: var(--card); border-radius: 10px; padding: 8px 12px; font-weight: 500; }
+  .sb-session .text-btn.danger { color: var(--hold); }
+  .sb-session .text-btn:disabled { opacity: 0.35; }
+  table.sb-stats { width: 100%; border-collapse: collapse; font-size: 17px; table-layout: fixed; background: var(--card); border-radius: 14px; overflow: hidden; }
+  table.sb-stats th { color: var(--muted); font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; text-align: center; padding: 10px 6px 4px; width: 36%; }
+  table.sb-stats th:first-child { text-align: left; width: 28%; padding-left: 14px; }
+  table.sb-stats td { padding: 6px; text-align: center; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ready); }
+  table.sb-stats td:first-child { text-align: left; font-family: var(--font); color: var(--text); font-weight: 600; padding-left: 14px; }
+  table.sb-stats tr:last-child td { padding-bottom: 12px; }
+  table.sb-stats td.dnf { color: var(--hold); } table.sb-stats td.none { color: var(--muted); }
+  .sb-summary { text-align: center; padding: 12px; margin: 10px 0; background: var(--card); border-radius: 14px; font-weight: 700; font-size: 16px; line-height: 1.6; }
+  .sb-summary .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; } .sb-summary .target { color: var(--accent); }
+  .times table { width: 100%; border-collapse: collapse; font-size: 16px; }
+  .times th, .times td { padding: 9px 6px; text-align: center; border-bottom: 1px solid var(--border); }
+  .times th { color: var(--accent); font-weight: 600; font-size: 13px; }
+  .times td:first-child, .times th:first-child { color: var(--muted); width: 36px; text-align: left; }
+  .times td.time { font-family: var(--mono); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .times td.best { color: var(--ready); font-weight: 600; } .times td.worst, .times td.dnf { color: var(--hold); }
+  .times .empty { padding: 40px 12px; color: var(--muted); text-align: center; line-height: 1.5; }
+  .times tr.round-head td { text-align: left; background: var(--card); font-weight: 600; padding: 8px 10px; }
+  .times tr.round-head .r-avg { float: right; font-family: var(--mono); }
+  .times tr.round-head.hit .r-avg { color: var(--ready); } .times tr.round-head.miss .r-avg { color: var(--hold); }
+  .times tr.round-head.open .r-avg { color: var(--muted); font-family: var(--font); font-weight: 500; }
+  .sb-foot { display: flex; gap: 8px; padding: 14px 0 4px; }
+  .sb-foot button { flex: 1; background: var(--card); border-radius: 12px; padding: 11px; font-weight: 500; }
+  .sb-foot button.danger { color: var(--hold); }
+  td.link, .link { cursor: pointer; }
+
+  /* tabs */
+  .tabs { display: flex; border-top: 1px solid var(--border); background: var(--bg); padding-bottom: env(safe-area-inset-bottom); }
+  .tabs button { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; color: var(--muted); font-size: 10px; position: relative; }
+  .tabs button svg { width: 25px; height: 25px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  .tabs button.active { color: var(--text); }
+  .tabs button.active::after { content: ""; position: absolute; bottom: 4px; width: 36px; height: 3px; border-radius: 2px; background: var(--accent); }
+
+  /* dialogs as bottom sheets */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: flex-end; justify-content: center; z-index: 20; }
+  .modal-bg.open { display: flex; }
+  .dialog { background: var(--card); border-radius: 22px 22px 0 0; width: 100%; max-height: 88vh; overflow-y: auto; padding: 14px 16px calc(18px + env(safe-area-inset-bottom)); -webkit-user-select: text; user-select: text; }
+  .dialog::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: #48484a; margin: 0 auto 14px; }
+  .dialog h2 { margin: 0 0 12px; font-size: 19px; }
+  .dialog p { margin: 0 0 12px; color: var(--muted); line-height: 1.5; }
+  .dialog .big { font-family: var(--mono); font-weight: 600; font-size: 44px; text-align: center; margin: 4px 0 10px; }
+  .dialog .big.dnf { color: var(--hold); }
+  .dialog .scr { font-family: var(--mono); font-size: 14px; line-height: 1.6; white-space: pre-line; text-align: center; margin: 0 0 12px; background: var(--panel); border-radius: 12px; padding: 10px 12px; overflow-wrap: anywhere; }
+  .dialog .preview svg { width: 100%; max-height: 220px; display: block; margin: 0 auto 12px; }
+  .dialog .preview.multi { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .dialog .preview.multi > div { flex: 1 1 140px; background: var(--panel); border-radius: 10px; padding: 6px; }
+  .dialog .preview.multi svg { max-height: 130px; margin: 0; }
+  .dialog .preview.multi .cap { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .dialog .zoom svg { width: 100%; max-height: 60vh; display: block; }
+  .dialog .actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; margin-top: 14px; }
+  .dialog .actions .spacer { flex: 1; }
+  .dialog .actions button { background: var(--card-2); border-radius: 12px; padding: 10px 16px; font-weight: 500; }
+  .dialog .actions button.primary { background: var(--accent); color: #fff; }
+  .dialog .actions button.danger { color: var(--hold); } .dialog .actions button.danger.primary { background: var(--hold); color: #fff; }
+  .group { background: var(--panel); border-radius: 14px; overflow: hidden; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; min-height: 50px; border-bottom: 1px solid var(--card-2); font-size: 16px; }
+  .row:last-child { border-bottom: 0; }
+  .row .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .row .value { font-family: var(--mono); font-variant-numeric: tabular-nums; } .row .value.dnf { color: var(--hold); }
+  .row select.field { width: auto; }
+  .section-title { color: var(--muted); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; margin: 16px 0 6px 4px; }
+  .section-title:first-child { margin-top: 0; }
+  .switch { position: relative; width: 51px; height: 31px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; position: absolute; }
+  .switch .knob { position: absolute; inset: 0; background: #39393d; border-radius: 16px; transition: background 0.15s; }
+  .switch .knob::after { content: ""; position: absolute; top: 2px; left: 2px; width: 27px; height: 27px; border-radius: 50%; background: #fff; transition: transform 0.15s; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+  .switch input:checked + .knob { background: var(--ready); } .switch input:checked + .knob::after { transform: translateX(20px); }
+  .switch input:disabled + .knob { opacity: 0.4; }
+  .chart-wrap { background: var(--panel); border-radius: 14px; padding: 10px 6px 4px; position: relative; }
+  .chart-wrap svg { width: 100%; height: 200px; display: block; overflow: visible; }
+  .chart-legend { display: flex; gap: 14px; padding: 4px 6px 0; color: var(--muted); font-size: 12px; }
+  .chart-legend i { display: inline-block; width: 14px; height: 2px; vertical-align: middle; margin-right: 6px; }
+  .chart-tip { position: absolute; pointer-events: none; background: var(--card-2); padding: 6px 9px; border-radius: 8px; font-size: 12px; font-family: var(--mono); white-space: nowrap; transform: translate(-50%, -110%); display: none; }
+  .kbd { font-family: var(--mono); background: var(--card-2); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+  .dialog .form { display: grid; gap: 10px; }
+  .dialog .form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
+  .dialog .form .hint { font-size: 12px; color: var(--muted); }
+  .dialog .form .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; background: var(--panel); border-radius: 12px; padding: 10px 12px; max-height: 40vh; overflow-y: auto; }
+  .dialog .form .checks label { display: flex; flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 14px; }
+  .dialog .form .checks input { width: 18px; height: 18px; accent-color: var(--accent); }
+  table.avg { width: 100%; border-collapse: collapse; font-size: 15px; }
+  table.avg th { text-align: left; color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid var(--card-2); }
+  table.avg td { padding: 9px 10px; border-bottom: 1px solid var(--card-2); vertical-align: top; }
+  table.avg tr:last-child td { border-bottom: 0; }
+  table.avg td.no { color: var(--muted); width: 40px; font-family: var(--mono); }
+  table.avg td.t { font-family: var(--mono); font-weight: 600; font-size: 16px; white-space: nowrap; width: 90px; }
+  table.avg td.t.trim { color: var(--muted); font-weight: 500; } table.avg td.t.dnf { color: var(--hold); }
+  table.avg td.s { font-family: var(--mono); font-size: 12px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
+  .avg-summary { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; font-size: 14px; color: var(--muted); }
+  .avg-summary b { color: var(--text); font-family: var(--mono); }
+  textarea.copy { width: 100%; background: var(--panel); color: var(--text); border: 1px solid var(--card-2); border-radius: 12px; padding: 10px 12px; font-family: var(--mono); font-size: 12px; line-height: 1.5; white-space: pre; overflow: auto; min-height: 140px; -webkit-user-select: text; user-select: text; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="top">
+    <div class="pill">
+      <select class="field" id="sessionSel" title="Session"></select>
+      <select class="field" id="eventSel" title="Event"></select><span class="relay-events" id="relayEvents" hidden></span>
+    </div>
+  </header>
+
+  <div class="body">
+    <main class="view" id="main">
+      <div class="scr-bar">
+        <div class="scr-controls"><button class="link" id="btnPrevScr">last</button><span>/</span><button class="link" id="btnNextScr">next</button><span>scramble</span></div>
+        <div class="scr-line">
+          <button class="relay-arrow" id="btnRelayPrev" title="Previous puzzle"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <div class="scramble" id="scramble"></div>
+          <button class="relay-arrow" id="btnRelayNext" title="Next puzzle"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+        <div class="relay-label" id="relayLabel"></div>
+      </div>
+      <div class="stage" id="stage">
+        <div class="entry-row" id="entryRow">
+          <div class="entry-box" id="entryBox" hidden><input id="entryInput" type="text" inputmode="decimal" placeholder="0.00" title="Type a time and press Enter: 1234 = 12.34, 10234 = 1:02.34, 1234+ = +2, DNF" autocomplete="off" spellcheck="false" aria-label="Type a time"></div>
+          <div class="entry-side" id="entrySide">
+            <div class="timer-row" id="timerRow"><div class="timer" id="timer">0.00</div><div class="diff" id="diff"></div></div>
+            <div class="penalty-bar" id="penaltyBar"></div>
+          </div>
+        </div>
+        <div class="center-stats" id="centerStats"></div>
+      </div>
+      <div class="cards" id="cards">
+        <div class="panel image" id="imgCard" title="Enlarge"><div id="scrImg"></div></div>
+        <div class="panel tiles" id="tiles"></div>
+      </div>
+    </main>
+
+    <section class="view" id="timesView" hidden>
+      <div class="sb-session">
+        <span class="lbl">Session</span>
+        <button class="text-btn" id="btnNewSession">New</button>
+        <button class="text-btn" id="btnRename">Edit</button>
+        <button class="text-btn danger" id="btnDeleteSession">Delete</button>
+      </div>
+      <table class="sb-stats" id="sbStats"></table>
+      <div class="sb-summary" id="sbSummary"></div>
+      <div class="times" id="timesList"></div>
+      <div class="sb-foot">
+        <button id="btnExport">Export CSV</button>
+        <button id="btnClear" class="danger">Clear session</button>
+      </div>
+    </section>
+  </div>
+
+  <nav class="tabs" id="tabs">
+    <button data-tab="timer" class="active"><svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M9.5 2.5h5M12 2.5V6"/></svg>Timer</button>
+    <button data-tab="times"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9.5"/><path d="M7.5 9h9M7.5 12h9M7.5 15h9"/></svg>Times</button>
+    <button id="btnStats"><svg viewBox="0 0 24 24"><path d="M4 20V4M4 20h16M7 15l4-5 3 3 5-7"/></svg>Stats</button>
+    <button id="btnSettings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>Settings</button>
+  </nav>
+</div>
+
+<div class="modal-bg" id="modalBg"><div class="dialog" id="dialog"></div></div>
+
+<script src="cube-timer.js"></script>
+<script>
+// Phone shell: tabs and the summary tiles under the timer. Everything else is the shared app.
+(() => {
+  const tabs = document.getElementById('tabs');
+  const views = { timer: document.getElementById('main'), times: document.getElementById('timesView') };
+  tabs.addEventListener('click', e => {
+    const b = e.target.closest('button[data-tab]');
+    if (!b) return;
+    for (const x of tabs.querySelectorAll('button[data-tab]')) x.classList.toggle('active', x === b);
+    for (const [k, v] of Object.entries(views)) v.hidden = k !== b.dataset.tab;
+  });
+  // mirror the sidebar stats table into the tiles card whenever it changes
+  const src = document.getElementById('sbStats'), tiles = document.getElementById('tiles'), cards = document.getElementById('cards');
+  const tile = (l, v) => `<div class="tile"><div class="l">${l}</div><div class="v${v === 'DNF' ? ' dnf' : ''}">${v}</div></div>`;
+  const sync = () => {
+    const rows = [...src.querySelectorAll('tbody tr')].map(tr => [...tr.children].map(td => td.textContent));
+    const avg = rows.filter(r => r[0] !== 'time');
+    let html = '';
+    if (avg.length) {
+      const [a, b] = avg;
+      html = tile(a[0], a[1]) + tile('best ' + a[0], a[2]);
+      if (b) html += '<div class="divider"></div>' + tile(b[0], b[1]) + tile('best ' + b[0], b[2]);
+    }
+    tiles.innerHTML = html;
+    cards.classList.toggle('one', document.getElementById('imgCard').hidden);
+  };
+  new MutationObserver(sync).observe(src, { childList: true, subtree: true });
+  new MutationObserver(sync).observe(document.getElementById('imgCard'), { attributes: true });
+  sync();
+})();
+</script>
+</body>
+</html>

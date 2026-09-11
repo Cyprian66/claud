@@ -1,7 +1,11 @@
 # Cube Timer
 
-Timer do speedcubingu w jednym pliku HTML. Bez zależności, bez budowania.
-Wystarczy otworzyć `index.html` w przeglądarce, na komputerze lub telefonie.
+Timer do speedcubingu bez zależności i bez budowania. Dwa układy korzystające z tej samej logiki (`cube-timer.js`):
+
+- `index.html` – wersja na komputer w układzie csTimera,
+- `mobile.html` – wersja na telefon: pastylka z sesją i konkurencją u góry, scramble, duży zegar obsługiwany dotykiem (przytrzymaj, puść gdy zielony, dotknij aby zatrzymać), karty z obrazkiem scramble i średnimi, a na dole zakładki Timer / Times / Stats / Settings. Okna (statystyki, ustawienia, sesje, średnie) otwierają się jako arkusze od dołu.
+
+Wystarczy otworzyć odpowiedni plik w przeglądarce (oba muszą leżeć obok `cube-timer.js`).
 
 ## Układ (wersja na komputer)
 
@@ -18,8 +22,6 @@ Interfejs aplikacji jest po angielsku.
 Każdą średnią można kliknąć (w tabeli po lewej, na liście czasów i pod zegarem): otwiera się okno z czasami składowymi, ich scramble i tekstem do skopiowania; odcięte czasy są w nawiasach. Podczas inspekcji przytrzymanie spacji zmienia kolor na czerwony, a gotowość na zielony, tak jak bez inspekcji.
 
 Zmiana konkurencji nie zmienia sesji: sesja zapamiętuje wybraną konkurencję, a czasy zostają na miejscu. Wszystkie okna dialogowe są własne, więc działają także w piaskownicy (np. w opublikowanym artefakcie), gdzie systemowe `prompt`/`confirm` są blokowane.
-
-Wersja na telefon jest planowana osobno.
 
 ## Sesje
 
