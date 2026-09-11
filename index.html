@@ -943,8 +943,7 @@
   function save() { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) { /* quota */ } }
   const session = () => state.sessions.find(s => s.id === state.current);
   const allSolves = () => session().solves;
-  // the list and all statistics only cover solves done in the currently selected event
-  const solves = () => allSolves().filter(s => s.event === session().event);
+  const solves = allSolves; // a session keeps all its times whatever event is selected
   const event = () => EVENTS[session().event];
   const inspectionActive = () => state.inspection && event().insp;
 
@@ -1121,13 +1120,14 @@
       rafId = requestAnimationFrame(tick);
     } else if (phase.startsWith('insp')) {
       const left = INSPECTION_MS - (performance.now() - inspectionStart);
-      if (left > -2000) { el.timer.textContent = left > 0 ? Math.ceil(left / 1000) : '+2'; inspectionPenalty = left > 0 ? null : '+2'; }
+      const typing = state.inputMode === 'typing'; // while typing times the countdown is informational only
+      if (left > -2000) { el.timer.textContent = left > 0 ? Math.ceil(left / 1000) : '+2'; inspectionPenalty = left > 0 || typing ? null : '+2'; }
+      else if (typing) { el.timer.textContent = 'DNF'; inspectionPenalty = null; }
       else {
         // 17 s of inspection: the attempt is a DNF and is recorded right away (WCA A3d1)
         cancelAnimationFrame(rafId); clearTimeout(holdTimer); spaceDown = false; pointerDown = false; inspectionPenalty = null;
         setPhase('idle');
         addSolve(0, 'DNF');
-        if (state.inputMode === 'typing') el.entryInput.value = '';
         return;
       }
       rafId = requestAnimationFrame(tick);
@@ -1563,9 +1563,8 @@
   });
   $('btnClear').addEventListener('click', async () => {
     if (!solves().length) return;
-    if (!await ask({ title: 'Clear times?', message: `All ${solves().length} ${event().name} solves in session “${session().name}” will be deleted.`, ok: 'Clear', danger: true })) return;
-    const ev = session().event;
-    session().solves = allSolves().filter(s => s.event !== ev); resetDisplay(); save(); render();
+    if (!await ask({ title: 'Clear times?', message: `All ${solves().length} solves in session “${session().name}” will be deleted.`, ok: 'Clear', danger: true })) return;
+    session().solves = []; resetDisplay(); save(); render();
   });
   $('btnExport').addEventListener('click', () => {
     const list = solves();

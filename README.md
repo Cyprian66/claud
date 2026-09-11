@@ -12,7 +12,7 @@ Interfejs aplikacji jest po angielsku.
 - **Lewy panel**: u góry ikony narzędzi (Settings, Statistics z wykresem, Export CSV, Clear), wiersz „Session” z listą sesji i przyciskami nowa / zmień nazwę / usuń, tabela **current / best** (time, ao5, ao12 oraz mo3 dla konkurencji na średnią z 3; ao25, ao50, ao100, ao200, ao500 i ao1000 pojawiają się dopiero, gdy sesja ma tyle ułożeń), podsumowanie „Solves: udane/wszystkie, mean” i lista czasów (najlepszy na zielono, najgorszy na czerwono).
 - **Góra**: wybór konkurencji, linki „last / next scramble” (klawisze `P` / `N`) i duży scramble.
 - **Środek** (wyśrodkowany względem całego ekranu): duży zegar, po prawej różnica względem poprzedniego ułożenia (zielona, gdy lepiej, czerwona, gdy gorzej), pod nim przyciski OK / +2 / DNF / Delete i linie **ao5 / ao12** (mo3 / ao5 dla konkurencji na średnią z 3).
-- **Tryb wpisywania czasów** (Settings → Time entry → Type times): zamiast stopera na środku pojawia się ramka, w której wpisujesz czas i zatwierdzasz Enterem. Notacja jak w csTimerze: `1234` = 12.34, `10234` = 1:02.34, `1234+` = +2, `DNF`. Z włączoną inspekcją spacja w pustym polu startuje odliczanie 15 s, druga spacja je kończy, a wpisany czas dostaje karę +2, jeśli inspekcja przekroczyła 15 s. Po 17 s inspekcji DNF jest zapisywany automatycznie (w obu trybach).
+- **Tryb wpisywania czasów** (Settings → Time entry → Type times): zamiast stopera na środku pojawia się ramka, w której wpisujesz czas i zatwierdzasz Enterem. Notacja jak w csTimerze: `1234` = 12.34, `10234` = 1:02.34, `1234+` = +2, `DNF`. Z włączoną inspekcją spacja w pustym polu startuje odliczanie 15 s, druga spacja je kończy, a odliczanie po przekroczeniu 15 i 17 s pokazuje „+2” i „DNF” tylko informacyjnie: wpisany czas nie dostaje automatycznych kar. W trybie stopera kary WCA działają normalnie, a po 17 s inspekcji DNF zapisuje się automatycznie.
 - **Prawy dolny róg**: panel z obrazkiem scramble (kliknięcie powiększa). Obrazek, linie ao5 / ao12 i różnicę względem poprzedniego czasu można ukryć w ustawieniach.
 
 Każdą średnią można kliknąć (w tabeli po lewej, na liście czasów i pod zegarem): otwiera się okno z czasami składowymi, ich scramble i tekstem do skopiowania; odcięte czasy są w nawiasach. Podczas inspekcji przytrzymanie spacji zmienia kolor na czerwony, a gotowość na zielony, tak jak bez inspekcji.
@@ -23,7 +23,7 @@ Wersja na telefon jest planowana osobno.
 
 ## Sesje
 
-Każda sesja ma własną nazwę i listę czasów. Każde ułożenie zapamiętuje konkurencję, w której zostało zrobione: po zmianie konkurencji lista i statystyki pokazują tylko czasy z tej konkurencji, a pozostałe czekają pod swoją. Można mieć kilka sesji dla tej samej konkurencji (np. „3x3 rano”, „3x3 OH”). Dane zapisują się w `localStorage`.
+Każda sesja ma własną nazwę i listę czasów. Zmiana konkurencji nie zmienia sesji ani nie ukrywa czasów: lista i statystyki obejmują całą sesję. Każde ułożenie zapamiętuje konkurencję, w której zostało zrobione, dzięki czemu obrazek scramble w szczegółach ułożenia jest zawsze właściwy. Można mieć kilka sesji dla tej samej konkurencji (np. „3x3 rano”, „3x3 OH”). Dane zapisują się w `localStorage`.
 
 ## Konkurencje
 
