@@ -109,7 +109,7 @@
   .main.holding { background: #22111a; }
   .main.ready { background: #0d2419; }
   .main.inspecting { background: #10121c; }
-  .scr-bar { padding: 12px 24px 14px; border-bottom: 1px solid var(--border); background: var(--bg); }
+  .scr-bar { padding: 12px calc(24px + 330px) 14px 24px; border-bottom: 1px solid var(--border); background: var(--bg); }
   .scr-controls { display: flex; align-items: center; justify-content: center; gap: 12px; font-family: var(--mono); font-size: 19px; color: var(--text); }
   .scr-controls select { width: auto; min-width: 190px; padding: 7px 32px 7px 12px; font-size: 18px; }
   .scr-controls .link { color: var(--accent); font-family: var(--mono); font-size: 19px; padding: 4px 2px; }
@@ -131,7 +131,7 @@
   .scramble.long { font-size: clamp(16px, 1.75vw, 30px); letter-spacing: 0.02em; }
   .scramble.multi { text-align: left; font-size: clamp(15px, 1.5vw, 24px); line-height: 1.45; max-width: 1000px; margin: 0 auto; letter-spacing: 0; }
   .scramble.hidden-during-solve { visibility: hidden; }
-  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 16px 40px; }
+  .stage { flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; padding: 16px calc(40px + 330px) 16px 40px; /* centred on the screen, not the column */ }
   .timer {
     font-family: var(--mono);
     font-weight: 600;
@@ -255,6 +255,8 @@
   @media (max-width: 1250px) {
     .panel.image { width: 200px; height: 200px; padding: 10px; }
     .center-stats { font-size: clamp(28px, 3.4vw, 48px); }
+    .stage { padding: 16px 40px; }
+    .scr-bar { padding: 12px 24px 14px; }
   }
   @media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
 </style>
@@ -1182,7 +1184,13 @@
     render();
   }
   function resetDisplay() { lastSolveId = null; el.timer.textContent = zero(); el.penaltyBar.innerHTML = ''; renderDiff(); }
-  function cancelTiming() { if (phase !== 'idle') { cancelAnimationFrame(rafId); clearTimeout(holdTimer); setPhase('idle'); el.timer.textContent = zero(); } }
+  function cancelTiming() {
+    if (phase === 'idle') return;
+    cancelAnimationFrame(rafId); clearTimeout(holdTimer); inspectionPenalty = null; setPhase('idle');
+    const last = lastSolveId && solves().find(x => x.id === lastSolveId);
+    el.timer.textContent = last ? fmtSolve(last) : zero();
+    renderDiff();
+  }
 
   // ---- typed times (csTimer style: 1234 = 12.34, 10234 = 1:02.34, trailing + = +2, DNF) ----
   function parseTyped(raw) {
@@ -1212,14 +1220,25 @@
     el.timerRow.classList.toggle('small', typing);
     if (typing) { el.entryInput.value = ''; el.entryInput.focus(); }
   }
+  // Space in the (empty) box starts a 15 s inspection; Space again ends it, then the typed
+  // time is submitted with the inspection penalty (+2 / DNF) applied on top of any typed one.
   el.entryInput.addEventListener('keydown', e => {
     e.stopPropagation();
+    if (e.code === 'Space' && inspectionActive() && !el.entryInput.value.trim()) {
+      e.preventDefault();
+      if (phase === 'idle') startInspection();
+      else if (phase === 'inspecting') { cancelAnimationFrame(rafId); phase = 'typingWait'; el.main.classList.remove('inspecting'); el.timer.textContent = inspectionPenalty || 'type time'; }
+      return;
+    }
     if (e.key === 'Enter') {
       const r = parseTyped(el.entryInput.value);
       if (!r) { el.entryInput.select(); return; }
       el.entryInput.value = '';
-      addSolve(r.ms, r.penalty);
-    } else if (e.key === 'Escape') el.entryInput.value = '';
+      const insp = (phase === 'inspecting' || phase === 'typingWait') ? inspectionPenalty : null;
+      const penalty = r.penalty === 'DNF' || insp === 'DNF' ? 'DNF' : (r.penalty === '+2' || insp === '+2') ? '+2' : null;
+      cancelAnimationFrame(rafId); inspectionPenalty = null; setPhase('idle');
+      addSolve(r.ms, penalty);
+    } else if (e.key === 'Escape') { el.entryInput.value = ''; if (phase !== 'idle') cancelTiming(); }
   });
   el.entryBox.addEventListener('click', () => el.entryInput.focus());
 
@@ -1262,7 +1281,7 @@
   let pointerDown = false;
   el.stage.addEventListener('pointerdown', e => {
     if (state.inputMode === 'typing') return;
-    if (phase !== 'running' && e.target.closest('button')) return;
+    if (phase !== 'running' && e.target.closest('button, .center-stats, .entry-box')) return;
     e.preventDefault(); pointerDown = true; press();
   });
   const pointerUp = () => { if (pointerDown) { pointerDown = false; release(); } };
