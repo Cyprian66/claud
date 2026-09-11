@@ -131,6 +131,29 @@
   .scr-controls .link:hover { text-decoration: underline; }
   .scr-controls .link:disabled { color: var(--muted); text-decoration: none; cursor: default; }
   .scr-controls .sep { color: var(--muted); }
+  .scr-line { display: flex; align-items: center; gap: 12px; }
+  .scr-line .scramble { flex: 1; min-width: 0; }
+  .relay-arrow {
+    flex: none; width: 56px; height: 56px; border-radius: 14px; background: var(--card); color: var(--muted);
+    display: none; align-items: center; justify-content: center;
+  }
+  .relay-arrow svg { width: 30px; height: 30px; stroke: currentColor; fill: none; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+  .relay-arrow:hover { background: var(--card-2); color: var(--text); }
+  .relay-arrow:disabled { opacity: 0.25; cursor: default; background: var(--card); color: var(--muted); }
+  .scr-bar.relay .relay-arrow { display: inline-flex; }
+  .relay-label { display: none; text-align: center; color: var(--muted); font-size: 15px; margin-top: 6px; letter-spacing: 0.04em; }
+  .relay-label b { color: var(--text); font-weight: 600; }
+  .relay-label .dots { margin-left: 10px; letter-spacing: 4px; color: var(--card-2); }
+  .relay-label .dots .on { color: var(--accent); }
+  .scr-bar.relay .relay-label { display: block; }
+  .relay-events { color: var(--text); font-family: var(--mono); font-size: 16px; }
+  .dialog .preview.multi { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; }
+  .dialog .preview.multi > div { flex: 1 1 200px; max-width: 280px; background: var(--panel); border-radius: 10px; padding: 8px; }
+  .dialog .preview.multi svg { max-height: 170px; margin: 0; }
+  .dialog .preview.multi .cap { text-align: center; color: var(--muted); font-size: 12px; margin-bottom: 4px; }
+  .dialog .form .checks { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px 14px; background: var(--panel); border-radius: 10px; padding: 10px 12px; max-height: 240px; overflow-y: auto; }
+  .dialog .form .checks label { display: flex; flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 14px; cursor: pointer; }
+  .dialog .form .checks input { width: 16px; height: 16px; accent-color: var(--accent); }
   .scramble {
     font-family: var(--mono);
     font-weight: 500;
@@ -314,10 +337,15 @@
   <main class="main" id="main">
     <div class="scr-bar">
       <div class="scr-controls">
-        <select class="field" id="eventSel" title="Event"></select>
+        <select class="field" id="eventSel" title="Event"></select><span class="relay-events" id="relayEvents" hidden></span>
         <button class="link" id="btnPrevScr" title="Previous scramble (P)">last</button><span class="sep">/</span><button class="link" id="btnNextScr" title="Next scramble (N)">next</button><span>scramble</span>
       </div>
-      <div class="scramble" id="scramble"></div>
+      <div class="scr-line">
+        <button class="relay-arrow" id="btnRelayPrev" title="Previous puzzle (←)"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></button>
+        <div class="scramble" id="scramble"></div>
+        <button class="relay-arrow" id="btnRelayNext" title="Next puzzle (→)"><svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg></button>
+      </div>
+      <div class="relay-label" id="relayLabel"></div>
     </div>
     <div class="stage" id="stage">
       <div class="entry-row" id="entryRow">
@@ -967,7 +995,8 @@
     if (!state.sessions.some(s => s.id === state.current)) state.current = state.sessions[0].id;
     // every solve belongs to the event it was done in; older data inherits the session's event
     for (const ses of state.sessions) {
-      if (ses.type !== 'comp') ses.type = 'normal';
+      if (ses.type !== 'comp' && ses.type !== 'relay') ses.type = 'normal';
+      if (ses.type === 'relay') { ses.relay = (ses.relay || []).filter(e => EVENTS[e]); if (!ses.relay.length) ses.type = 'normal'; }
       if (typeof ses.target !== 'number' || !(ses.target > 0)) ses.target = null;
       for (const sv of ses.solves) if (!EVENTS[sv.event]) sv.event = ses.event;
     }
@@ -984,6 +1013,7 @@
   const event = () => EVENTS[session().event];
   const inspectionActive = () => state.inspection && event().insp;
   const isComp = () => session().type === 'comp';
+  const isRelay = () => session().type === 'relay';
   // competition simulation: solves are grouped into rounds (ao5, or mo3 for mean-of-3 events)
   const roundSize = () => event().fmt === 'mo3' ? 3 : 5;
   const roundFn = () => event().fmt === 'mo3' ? meanOf : average;
@@ -1075,6 +1105,7 @@
   const $ = id => document.getElementById(id);
   const el = {
     app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), timerRow: $('timerRow'), diff: $('diff'), scramble: $('scramble'),
+    scrBar: document.querySelector('.scr-bar'), relayLabel: $('relayLabel'), relayEvents: $('relayEvents'), btnRelayPrev: $('btnRelayPrev'), btnRelayNext: $('btnRelayNext'),
     entryBox: $('entryBox'), entryInput: $('entryInput'),
     penaltyBar: $('penaltyBar'), imgCard: $('imgCard'), scrImg: $('scrImg'), centerStats: $('centerStats'),
     sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), sbSummary: $('sbSummary'), timesList: $('timesList'),
@@ -1132,16 +1163,21 @@
       openDialog(`<h2>${esc(o.title)}</h2>
         <div class="form">
           <label>Session name<input class="field" id="sfName" type="text" maxlength="40" value="${esc(o.name || '')}" placeholder="Session name"></label>
-          <label>Session type<select class="field" id="sfType"><option value="normal"${o.type !== 'comp' ? ' selected' : ''}>Normal</option><option value="comp"${o.type === 'comp' ? ' selected' : ''}>Comp sim (rounds of 5)</option></select></label>
+          <label>Session type<select class="field" id="sfType"><option value="normal"${o.type === 'normal' || !o.type ? ' selected' : ''}>Normal</option><option value="comp"${o.type === 'comp' ? ' selected' : ''}>Comp sim (rounds of 5)</option><option value="relay"${o.type === 'relay' ? ' selected' : ''}>Relay (several puzzles, one time)</option></select></label>
+          <label id="sfRelayWrap"${o.type === 'relay' ? '' : ' hidden'}>Puzzles in the relay<div class="checks">${Object.entries(EVENTS).map(([id, ev]) => `<label><input type="checkbox" value="${id}"${(o.relay || []).includes(id) ? ' checked' : ''}>${esc(ev.name)}</label>`).join('')}</div><span class="hint">Scrambles are shown one at a time; use the arrows to move between puzzles. The whole relay is one solve.</span></label>
           <label id="sfTargetWrap"${o.type === 'comp' ? '' : ' hidden'}>Target average<input class="field" id="sfTarget" type="text" inputmode="decimal" value="${o.target != null ? fmt(o.target) : ''}" placeholder="e.g. 12.34 or 1234"><span class="hint">Each round of 5 solves is compared with this ao5 (mo3 rounds of 3 for 6x6, 7x7 and blindfolded).</span></label>
         </div>
         <div class="actions"><button id="dlgCancel">Cancel</button><button id="dlgOk" class="primary">${esc(o.ok || 'Save')}</button></div>`);
       const name = $('sfName'), type = $('sfType'), target = $('sfTarget');
-      type.addEventListener('change', () => { $('sfTargetWrap').hidden = type.value !== 'comp'; if (type.value === 'comp') target.focus(); });
+      type.addEventListener('change', () => { $('sfTargetWrap').hidden = type.value !== 'comp'; $('sfRelayWrap').hidden = type.value !== 'relay'; if (type.value === 'comp') target.focus(); });
       const ok = () => {
-        let t = null;
+        let t = null, relay = null;
         if (type.value === 'comp' && target.value.trim()) { const r = parseTyped(target.value); if (!r || r.penalty) { target.select(); return; } t = r.ms; }
-        closeDialog({ name: name.value.trim(), type: type.value, target: t });
+        if (type.value === 'relay') {
+          relay = [...el.dialog.querySelectorAll('#sfRelayWrap input:checked')].map(i => i.value);
+          if (!relay.length) { el.dialog.querySelector('#sfRelayWrap .checks').style.outline = '2px solid var(--hold)'; return; }
+        }
+        closeDialog({ name: name.value.trim(), type: type.value, target: t, relay });
       };
       $('dlgOk').addEventListener('click', ok);
       $('dlgCancel').addEventListener('click', () => closeDialog(null));
@@ -1153,18 +1189,35 @@
   // =====================================================================
   //  Scrambles with history (previous / next)
   // =====================================================================
-  let scrHistory = [], scrIndex = -1, currentScramble = '';
+  // history entries are scramble strings, or for relay sessions arrays of { event, scramble }
+  let scrHistory = [], scrIndex = -1, currentScramble = '', relayScr = null, relayIdx = 0;
+  const imageEvent = () => relayScr ? relayScr[relayIdx].event : session().event;
+  const imageScramble = () => relayScr ? relayScr[relayIdx].scramble : currentScramble;
   function showScramble() {
-    currentScramble = scrHistory[scrIndex];
-    el.scramble.textContent = currentScramble;
-    el.scramble.classList.toggle('multi', currentScramble.includes('\n'));
-    el.scramble.classList.toggle('long', !currentScramble.includes('\n') && currentScramble.length > 130);
+    const entry = scrHistory[scrIndex];
+    relayScr = Array.isArray(entry) ? entry : null;
+    if (relayScr) { relayIdx = Math.min(relayIdx, relayScr.length - 1); currentScramble = relayScr.map(r => `${EVENTS[r.event].name}: ${r.scramble.replace(/\n/g, ' / ')}`).join('\n'); }
+    else currentScramble = entry;
+    const text = relayScr ? relayScr[relayIdx].scramble : currentScramble;
+    el.scramble.textContent = text;
+    el.scramble.classList.toggle('multi', text.includes('\n'));
+    el.scramble.classList.toggle('long', !text.includes('\n') && text.length > 130);
     el.btnPrevScr.disabled = scrIndex <= 0;
+    el.scrBar.classList.toggle('relay', !!relayScr);
+    if (relayScr) {
+      el.relayLabel.innerHTML = `<b>${esc(EVENTS[relayScr[relayIdx].event].name)}</b> · ${relayIdx + 1}/${relayScr.length}<span class="dots">${relayScr.map((_, i) => `<span class="${i === relayIdx ? 'on' : ''}">●</span>`).join('')}</span>`;
+      el.btnRelayPrev.disabled = relayIdx === 0;
+      el.btnRelayNext.disabled = relayIdx >= relayScr.length - 1;
+    }
     renderImage();
   }
+  function relayStep(d) { if (!relayScr) return; const n = relayIdx + d; if (n < 0 || n >= relayScr.length) return; relayIdx = n; showScramble(); }
+  el.btnRelayPrev.addEventListener('click', e => { relayStep(-1); e.currentTarget.blur(); });
+  el.btnRelayNext.addEventListener('click', e => { relayStep(1); e.currentTarget.blur(); });
   function newScramble() {
     scrHistory = scrHistory.slice(0, scrIndex + 1);
-    scrHistory.push(event().scr());
+    relayIdx = 0;
+    scrHistory.push(isRelay() ? session().relay.map(ev => ({ event: ev, scramble: EVENTS[ev].scr() })) : event().scr());
     if (scrHistory.length > 50) scrHistory.shift();
     scrIndex = scrHistory.length - 1;
     showScramble();
@@ -1175,7 +1228,7 @@
   function renderImage() {
     el.imgCard.hidden = !state.showImage;
     el.centerStats.hidden = !state.showStats;
-    el.scrImg.innerHTML = state.showImage ? scrambleSvg(session().event, currentScramble) : '';
+    el.scrImg.innerHTML = state.showImage ? scrambleSvg(imageEvent(), imageScramble()) : '';
   }
   $('btnNextScr').addEventListener('click', e => { nextScramble(); e.currentTarget.blur(); });
   el.btnPrevScr.addEventListener('click', e => { prevScramble(); e.currentTarget.blur(); });
@@ -1231,6 +1284,7 @@
   }
   function addSolve(ms, penalty) {
     const solve = { id: uid(), ms: Math.round(ms), penalty, event: session().event, scramble: currentScramble, date: new Date().toISOString() };
+    if (relayScr) solve.relay = relayScr.map(r => ({ event: r.event, scramble: r.scramble }));
     allSolves().push(solve);
     lastSolveId = solve.id;
     save();
@@ -1372,6 +1426,8 @@
     else if (e.code === 'Escape') { if (phase.startsWith('insp')) cancelTiming(); }
     else if (e.key === 'n' || e.key === 'N') nextScramble();
     else if (e.key === 'p' || e.key === 'P') prevScramble();
+    else if (e.key === 'ArrowRight' && relayScr) { e.preventDefault(); relayStep(1); }
+    else if (e.key === 'ArrowLeft' && relayScr) { e.preventDefault(); relayStep(-1); }
   });
   document.addEventListener('keyup', e => { if (e.code === 'Space' && spaceDown) { e.preventDefault(); spaceDown = false; release(); } });
   el.stage.addEventListener('pointerdown', e => {
@@ -1390,7 +1446,7 @@
   const tile = (label, value) => `<div class="stat"><div class="l">${label}</div><div class="v${value === 'DNF' ? ' dnf' : ''}">${value}</div></div>`;
   const sbRow = (label, value) => `<span class="l">${label}</span><span class="v${value === 'DNF' ? ' dnf' : ''}">${value}</span>`;
   function renderSessionSelect() {
-    el.sessionSel.innerHTML = state.sessions.map(s => `<option value="${s.id}">${esc(s.name)}${s.type === 'comp' ? ' (comp)' : ''}</option>`).join('');
+    el.sessionSel.innerHTML = state.sessions.map(s => `<option value="${s.id}">${esc(s.name)}${s.type === 'comp' ? ' (comp)' : s.type === 'relay' ? ' (relay)' : ''}</option>`).join('');
     el.sessionSel.value = state.current;
     $('btnDeleteSession').disabled = state.sessions.length <= 1;
   }
@@ -1398,6 +1454,9 @@
     const list = solves(), ev = event(), best = bestSolve(list), worst = worstSolve(list);
     renderSessionSelect();
     el.eventSel.value = session().event;
+    el.eventSel.hidden = isRelay();
+    el.relayEvents.hidden = !isRelay();
+    if (isRelay()) el.relayEvents.textContent = 'Relay: ' + session().relay.map(e => EVENTS[e].name).join(' + ');
     document.title = `${session().name} · ${ev.name} · Cube Timer`;
 
     const cur = (n, f) => dash(lastN(list, n, f)), bst = (n, f) => dash(bestN(list, n, f));
@@ -1528,7 +1587,8 @@
     openDialog(`<h2>Solve #${idx} <span style="color:var(--muted);font-weight:400;font-size:15px">· ${new Date(s.date).toLocaleString('en-GB')}</span></h2>
       <div class="big${s.penalty === 'DNF' ? ' dnf' : ''}">${fmtSolve(s)}</div>
       <div class="scr">${esc(s.scramble)}</div>
-      <div class="preview">${state.showImage ? scrambleSvg(s.event || session().event, s.scramble) : ''}</div>
+      ${s.relay ? `<div class="preview multi">${state.showImage ? s.relay.map(r => `<div><div class="cap">${esc(EVENTS[r.event] ? EVENTS[r.event].name : r.event)}</div>${EVENTS[r.event] ? scrambleSvg(r.event, r.scramble) : ''}</div>`).join('') : ''}</div>`
+        : `<div class="preview">${state.showImage ? scrambleSvg(s.event || session().event, s.scramble) : ''}</div>`}
       <div class="actions" id="solveActions"></div>`, 'wide');
     const actions = $('solveActions');
     actions.append(penaltyButtons(s, () => openSolve(id)));
@@ -1541,7 +1601,7 @@
   }
   el.imgCard.addEventListener('click', () => {
     if (!currentScramble) return;
-    openDialog(`<h2>${esc(event().name)}</h2><div class="scr">${esc(currentScramble)}</div><div class="zoom">${scrambleSvg(session().event, currentScramble)}</div>
+    openDialog(`<h2>${esc(EVENTS[imageEvent()].name)}</h2><div class="scr">${esc(imageScramble())}</div><div class="zoom">${scrambleSvg(imageEvent(), imageScramble())}</div>
       <div class="actions"><button class="primary" id="dlgClose">Close</button></div>`, 'wide');
     $('dlgClose').addEventListener('click', () => closeDialog());
   });
@@ -1669,15 +1729,19 @@
   $('btnNewSession').addEventListener('click', async () => {
     const r = await sessionForm({ title: 'New session', name: `Session ${state.sessions.length + 1}`, type: 'normal', ok: 'Create' });
     if (!r) return;
-    const s = { id: uid(), name: r.name || `Session ${state.sessions.length + 1}`, type: r.type, target: r.target, event: session().event, solves: [] };
+    const s = { id: uid(), name: r.name || `Session ${state.sessions.length + 1}`, type: r.type, target: r.target, relay: r.relay, event: r.relay ? r.relay[0] : session().event, solves: [] };
     state.sessions.push(s);
     switchSession(s.id);
   });
   $('btnRename').addEventListener('click', async () => {
     const cur = session();
-    const r = await sessionForm({ title: 'Edit session', name: cur.name, type: cur.type, target: cur.target, ok: 'Save' });
+    const r = await sessionForm({ title: 'Edit session', name: cur.name, type: cur.type, target: cur.target, relay: cur.relay, ok: 'Save' });
     if (!r) return;
-    cur.name = r.name || cur.name; cur.type = r.type; cur.target = r.target; save(); render();
+    const relayChanged = r.type === 'relay' && JSON.stringify(r.relay) !== JSON.stringify(cur.relay || []);
+    cur.name = r.name || cur.name; cur.type = r.type; cur.target = r.target; cur.relay = r.relay;
+    if (r.relay) cur.event = r.relay[0];
+    save(); render();
+    if (relayChanged || (r.type !== 'relay') !== !relayScr) resetScrambles();
   });
   $('btnDeleteSession').addEventListener('click', async () => {
     if (state.sessions.length <= 1) return;

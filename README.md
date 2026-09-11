@@ -27,13 +27,17 @@ Każda sesja ma własną nazwę i listę czasów. Zmiana konkurencji nie zmienia
 
 ### Symulacja zawodów (Comp sim)
 
-Przy tworzeniu lub edycji sesji (ikona ołówka) wybierasz typ **Normal** albo **Comp sim** i wpisujesz cel, np. `12.34` lub `1234`. W sesji comp sim:
+Przy tworzeniu lub edycji sesji (ikona ołówka) wybierasz typ **Normal**, **Comp sim** albo **Relay**; dla Comp sim wpisujesz cel, np. `12.34` lub `1234`. W sesji comp sim:
 
 - lista czasów dzieli się na **rundy po 5 ułożeń** (po 3 dla 6x6, 7x7 i konkurencji bez patrzenia, gdzie na zawodach liczy się mo3), każda z nagłówkiem i swoim ao5 / mo3 (lista nie pokazuje wtedy kolumny ao12),
 - ao5 rundy jest zielone, gdy jest równe celowi lub lepsze, czerwone, gdy gorsze,
 - pod zegarem widać numer bieżącego ułożenia w rundzie (np. „solve 3/5”), po czwartym ułożeniu **BPA i WPA** (najlepszą i najgorszą możliwą ao5 rundy) oraz wynik ostatniej ukończonej rundy („last ao5”),
 - w panelu po lewej tabela current / best ma tylko wiersze time i ao5, gdzie ao5 to średnia ostatniej ukończonej rundy i najlepszej rundy, pod nią cel i licznik rund poniżej celu, a okno statystyk ma listę wszystkich rund,
 - kliknięcie nagłówka rundy otwiera jej czasy ze scramble.
+
+### Relay
+
+Typ sesji **Relay**: w formularzu zaznaczasz kostki (dowolny zestaw konkurencji). Scramble pokazują się pojedynczo, z nazwą kostki i licznikiem (np. „3x3x3 · 2/3”), a duże szare strzałki po bokach (lub klawisze ← →) przechodzą do następnego scramble; obrazek zmienia się razem z nim. Cały relay to jedno ułożenie: czas zapisuje się raz, a w szczegółach ułożenia są wszystkie scramble z obrazkami. Wybór konkurencji na górze jest w takiej sesji zastąpiony listą kostek relayu.
 
 ## Konkurencje
 
