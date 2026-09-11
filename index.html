@@ -167,12 +167,18 @@
   .diff.same { color: var(--muted); }
   /* timer mode: the wrappers are transparent; typing mode: box on the left, last time + penalties on the right */
   .entry-row, .entry-side { display: contents; }
-  .stage.typing .entry-row { display: flex; align-items: center; justify-content: center; gap: 36px; width: 100%; }
-  .stage.typing .entry-box { flex: 0 1 760px; min-width: 320px; }
-  .stage.typing .entry-side { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 300px; }
+  .stage.typing .entry-row { display: contents; }
+  .stage.typing .entry-box { width: min(900px, 100%); min-height: clamp(180px, 30vh, 320px); }
+  /* last time, difference and penalties sit at the right, above the scramble image panel */
+  .stage.typing .entry-side {
+    position: absolute; right: 18px; bottom: calc(clamp(260px, 24vw, 360px) + 44px);
+    display: flex; flex-direction: column; align-items: flex-end; gap: 12px;
+  }
   .stage.typing .timer-row { display: flex; width: auto; gap: 18px; align-items: baseline; }
+  .stage.typing .timer-row .timer { font-size: clamp(44px, 4.8vw, 84px); }
   .stage.typing .diff { margin-left: 0; }
   .stage.typing .penalty-bar:empty { display: none; }
+  .main { position: relative; }
   .entry-box {
     width: min(1100px, 100%);
     min-height: clamp(150px, 24vh, 260px);
