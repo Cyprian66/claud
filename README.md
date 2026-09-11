@@ -9,12 +9,14 @@ Wystarczy otworzyć odpowiedni plik w przeglądarce (oba muszą leżeć obok `cu
 
 ## Otwieranie z GitHuba (GitHub Pages)
 
-Workflow `.github/workflows/pages.yml` publikuje stronę przy każdym pushu na gałąź timera. Po pierwszym uruchomieniu (zakładka **Actions**) strona jest dostępna pod:
+Workflow `.github/workflows/pages.yml` publikuje stronę przy każdym pushu na gałąź `main`, `master` lub gałąź timera. GitHub Pages jest darmowe dla **publicznych** repozytoriów (prywatne wymagają płatnego planu).
 
-- komputer: `https://cyprian66.github.io/claud/`
-- telefon: `https://cyprian66.github.io/claud/mobile.html`
+Jednorazowo: **Settings → Pages → Build and deployment → Source: GitHub Actions**, a potem uruchom workflow (Actions → Deploy to GitHub Pages → Run workflow) albo wypchnij dowolną zmianę. Strona jest dostępna pod:
 
-Jeśli workflow zgłosi brak włączonych Pages, włącz je raz ręcznie: **Settings → Pages → Build and deployment → Source: GitHub Actions**, a potem uruchom workflow ponownie (Actions → Deploy to GitHub Pages → Run workflow).
+- komputer: `https://<użytkownik>.github.io/<repozytorium>/`
+- telefon: `https://<użytkownik>.github.io/<repozytorium>/mobile.html`
+
+np. dla `cypriandoza07-tech/procejt`: `https://cypriandoza07-tech.github.io/procejt/`.
 
 ## Układ (wersja na komputer)
 
