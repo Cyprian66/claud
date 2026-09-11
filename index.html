@@ -165,6 +165,14 @@
   .diff.better { color: var(--ready); }
   .diff.worse { color: var(--hold); }
   .diff.same { color: var(--muted); }
+  /* timer mode: the wrappers are transparent; typing mode: box on the left, last time + penalties on the right */
+  .entry-row, .entry-side { display: contents; }
+  .stage.typing .entry-row { display: flex; align-items: center; justify-content: center; gap: 36px; width: 100%; }
+  .stage.typing .entry-box { flex: 0 1 760px; min-width: 320px; }
+  .stage.typing .entry-side { display: flex; flex-direction: column; align-items: flex-start; gap: 14px; min-width: 300px; }
+  .stage.typing .timer-row { display: flex; width: auto; gap: 18px; align-items: baseline; }
+  .stage.typing .diff { margin-left: 0; }
+  .stage.typing .penalty-bar:empty { display: none; }
   .entry-box {
     width: min(1100px, 100%);
     min-height: clamp(150px, 24vh, 260px);
@@ -306,9 +314,13 @@
       <div class="scramble" id="scramble"></div>
     </div>
     <div class="stage" id="stage">
-      <div class="entry-box" id="entryBox" hidden><input id="entryInput" type="text" inputmode="decimal" placeholder="0.00" title="Type a time and press Enter: 1234 = 12.34, 10234 = 1:02.34, 1234+ = +2, DNF" autocomplete="off" spellcheck="false" aria-label="Type a time"></div>
-      <div class="timer-row" id="timerRow"><div class="timer" id="timer">0.00</div><div class="diff" id="diff"></div></div>
-      <div class="penalty-bar" id="penaltyBar"></div>
+      <div class="entry-row" id="entryRow">
+        <div class="entry-box" id="entryBox" hidden><input id="entryInput" type="text" inputmode="decimal" placeholder="0.00" title="Type a time and press Enter: 1234 = 12.34, 10234 = 1:02.34, 1234+ = +2, DNF" autocomplete="off" spellcheck="false" aria-label="Type a time"></div>
+        <div class="entry-side" id="entrySide">
+          <div class="timer-row" id="timerRow"><div class="timer" id="timer">0.00</div><div class="diff" id="diff"></div></div>
+          <div class="penalty-bar" id="penaltyBar"></div>
+        </div>
+      </div>
       <div class="center-stats" id="centerStats"></div>
     </div>
     <div class="panel image" id="imgCard" title="Enlarge"><div id="scrImg"></div></div>
@@ -1295,6 +1307,7 @@
     const typing = state.inputMode === 'typing';
     cancelTiming();
     el.entryBox.hidden = !typing;
+    el.stage.classList.toggle('typing', typing);
     el.timerRow.classList.toggle('small', typing);
     if (typing) { el.entryInput.value = ''; el.entryInput.focus(); }
   }
