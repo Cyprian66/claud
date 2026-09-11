@@ -1403,9 +1403,9 @@
       const curR = rs[rs.length - 1], last = [...rs].reverse().find(r => r.avg != null);
       const cls = last ? (session().target == null ? '' : hitTarget(last.avg) ? ' hit' : ' miss') : '';
       const bw = showBpa(curR) ? bpaWpa(curR.solves) : null;
-      el.centerStats.innerHTML = `<div class="first"><span class="k">round ${curR.no}: </span><span class="v">${curR.solves.length}/${roundSize()}</span></div>`
+      el.centerStats.innerHTML = `<div class="first"><span class="k">solve: </span><span class="v">${curR.solves.length + 1}/${roundSize()}</span></div>`
         + (bw ? `<div class="bpa"><span class="k">bpa: </span><span class="v${hitTarget(bw.bpa) ? ' ok' : ''}${bw.bpa === Infinity ? ' dnf' : ''}">${dash(bw.bpa)}</span><span class="k"> · wpa: </span><span class="v${hitTarget(bw.wpa) ? ' ok' : ''}${bw.wpa === Infinity ? ' dnf' : ''}">${dash(bw.wpa)}</span></div>` : '')
-        + (last ? `<div class="link${cls}" data-avg="${roundLabel()}" data-start="${last.start}"><span class="k">round ${last.no} ${roundLabel()}: </span><span class="v${last.avg === Infinity ? ' dnf' : ''}">${dash(last.avg)}</span></div>` : `<div><span class="k">${roundLabel()}: </span><span class="v">–</span></div>`);
+        + (last ? `<div class="link${cls}" data-avg="${roundLabel()}" data-start="${last.start}"><span class="k">last ${roundLabel()}: </span><span class="v${last.avg === Infinity ? ' dnf' : ''}">${dash(last.avg)}</span></div>` : `<div><span class="k">${roundLabel()}: </span><span class="v">–</span></div>`);
     } else {
       el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
     }
