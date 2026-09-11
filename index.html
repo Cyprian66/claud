@@ -141,9 +141,9 @@
     font-variant-numeric: tabular-nums;
     transition: color 0.1s;
   }
-  .timer-row { display: flex; align-items: center; gap: 0.25em; }
+  .timer-row { position: relative; width: 100%; display: flex; align-items: center; justify-content: center; }
   .timer-row.small .timer { font-size: clamp(40px, 4.5vw, 80px); }
-  .diff { font-family: var(--mono); font-weight: 600; font-size: clamp(22px, 2.6vw, 48px); font-variant-numeric: tabular-nums; align-self: flex-end; padding-bottom: 0.15em; }
+  .diff { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); font-family: var(--mono); font-weight: 600; font-size: clamp(22px, 2.6vw, 48px); font-variant-numeric: tabular-nums; }
   .timer-row.small .diff { font-size: clamp(18px, 1.8vw, 32px); }
   .diff.better { color: var(--ready); }
   .diff.worse { color: var(--hold); }
@@ -163,7 +163,6 @@
     font-variant-numeric: tabular-nums; -webkit-user-select: text; user-select: text;
   }
   .entry-box input::placeholder { color: #3a3a3d; }
-  .entry-hint { color: var(--muted); font-size: 14px; margin-top: -10px; }
   .holding .timer { color: var(--hold); }
   .ready .timer { color: var(--ready); }
   .inspecting .timer { color: var(--accent); }
@@ -177,6 +176,14 @@
   .center-stats .v { font-family: var(--mono); font-variant-numeric: tabular-nums; }
   .center-stats .first .v { color: var(--ready); }
   .center-stats .dnf { color: var(--hold); }
+  .center-stats .link { cursor: pointer; border-radius: 10px; padding: 0 12px; }
+  .center-stats .link:hover { background: var(--card); }
+  td.link { cursor: pointer; }
+  td.link:hover { text-decoration: underline; }
+  .avg-row { cursor: pointer; }
+  .avg-row:hover { background: var(--card-2); }
+  .avg-scr { flex: 1; font-family: var(--mono); font-size: 13px; color: var(--muted); white-space: pre-line; line-height: 1.5; }
+  textarea.copy { width: 100%; background: var(--card-2); color: var(--text); border: 1px solid transparent; border-radius: 9px; padding: 8px 10px; font-family: var(--mono); font-size: 12px; resize: vertical; line-height: 1.5; white-space: pre; overflow: auto; -webkit-user-select: text; user-select: text; }
 
   .panel { background: var(--card); border-radius: var(--radius); }
   .panel.image {
@@ -266,8 +273,7 @@
       <div class="scramble" id="scramble"></div>
     </div>
     <div class="stage" id="stage">
-      <div class="entry-box" id="entryBox" hidden><input id="entryInput" type="text" inputmode="decimal" placeholder="0.00" autocomplete="off" spellcheck="false" aria-label="Type a time"></div>
-      <div class="entry-hint" id="entryHint" hidden>Type a time and press Enter · 1234 = 12.34 · 10234 = 1:02.34 · 1234+ = +2 · DNF</div>
+      <div class="entry-box" id="entryBox" hidden><input id="entryInput" type="text" inputmode="decimal" placeholder="0.00" title="Type a time and press Enter: 1234 = 12.34, 10234 = 1:02.34, 1234+ = +2, DNF" autocomplete="off" spellcheck="false" aria-label="Type a time"></div>
       <div class="timer-row" id="timerRow"><div class="timer" id="timer">0.00</div><div class="diff" id="diff"></div></div>
       <div class="penalty-bar" id="penaltyBar"></div>
       <div class="center-stats" id="centerStats"></div>
@@ -970,6 +976,15 @@
   const bestSolve = list => { const v = list.filter(s => effectiveMs(s) !== Infinity); return v.length ? v.reduce((a, b) => effectiveMs(a) < effectiveMs(b) ? a : b) : null; };
   const worstSolve = list => { const v = list.filter(s => effectiveMs(s) !== Infinity); return v.length ? v.reduce((a, b) => effectiveMs(a) > effectiveMs(b) ? a : b) : null; };
   const dash = v => v == null ? '–' : fmt(v);
+  function bestWindowStart(list, n, f) {
+    if (list.length < n) return -1;
+    let best = null, at = -1;
+    for (let i = 0; i + n <= list.length; i++) {
+      const a = f(list.slice(i, i + n));
+      if (a !== null && (best === null || a < best)) { best = a; at = i; }
+    }
+    return at;
+  }
   const BIG_AVGS = [25, 50, 100, 200, 500, 1000]; // shown only once the session has that many solves
   const availableAvgs = list => BIG_AVGS.filter(n => list.length >= n);
 
@@ -979,7 +994,7 @@
   const $ = id => document.getElementById(id);
   const el = {
     app: $('app'), main: $('main'), stage: $('stage'), timer: $('timer'), timerRow: $('timerRow'), diff: $('diff'), scramble: $('scramble'),
-    entryBox: $('entryBox'), entryInput: $('entryInput'), entryHint: $('entryHint'),
+    entryBox: $('entryBox'), entryInput: $('entryInput'),
     penaltyBar: $('penaltyBar'), imgCard: $('imgCard'), scrImg: $('scrImg'), centerStats: $('centerStats'),
     sessionSel: $('sessionSel'), eventSel: $('eventSel'), sbStats: $('sbStats'), sbSummary: $('sbSummary'), timesList: $('timesList'),
     btnPrevScr: $('btnPrevScr'), modalBg: $('modalBg'), dialog: $('dialog'),
@@ -1070,7 +1085,7 @@
     phase = p;
     el.main.classList.toggle('holding', p === 'holding' || p === 'inspHolding');
     el.main.classList.toggle('ready', p === 'ready' || p === 'inspReady');
-    el.main.classList.toggle('inspecting', p.startsWith('insp'));
+    el.main.classList.toggle('inspecting', p === 'inspecting'); // holding / ready colours win while the key is held
     el.scramble.classList.toggle('hidden-during-solve', p === 'running');
     el.imgCard.style.visibility = p === 'running' ? 'hidden' : '';
     el.centerStats.style.visibility = p === 'running' ? 'hidden' : '';
@@ -1177,7 +1192,7 @@
   function applyInputMode() {
     const typing = state.inputMode === 'typing';
     cancelTiming();
-    el.entryBox.hidden = !typing; el.entryHint.hidden = !typing;
+    el.entryBox.hidden = !typing;
     el.timerRow.classList.toggle('small', typing);
     if (typing) { el.entryInput.value = ''; el.entryInput.focus(); }
   }
@@ -1256,15 +1271,16 @@
     document.title = `${session().name} · ${ev.name} · Cube Timer`;
 
     const cur = (n, f) => dash(lastN(list, n, f)), bst = (n, f) => dash(bestN(list, n, f));
-    const td = v => `<td class="${v === 'DNF' ? 'dnf' : v === '–' ? 'none' : ''}">${v}</td>`;
-    const trs = [`<tr><td>time</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–')}${td(best ? fmtSolve(best) : '–')}</tr>`];
-    if (ev.fmt === 'mo3') trs.push(`<tr><td>mo3</td>${td(cur(3, meanOf))}${td(bst(3, meanOf))}</tr>`);
-    trs.push(`<tr><td>ao5</td>${td(cur(5, average))}${td(bst(5, average))}</tr>`, `<tr><td>ao12</td>${td(cur(12, average))}${td(bst(12, average))}</tr>`);
-    for (const n of availableAvgs(list)) trs.push(`<tr><td>ao${n}</td>${td(cur(n, average))}${td(bst(n, average))}</tr>`);
+    const td = (v, attrs = '') => `<td class="${v === 'DNF' ? 'dnf' : v === '–' ? 'none' : 'link'}"${v === '–' ? '' : ' ' + attrs}>${v}</td>`;
+    const avgRow = (kind, n) => `<tr><td>${kind}${kind === 'mo' ? 3 : n}</td>${td(cur(n, kind === 'mo' ? meanOf : average), `data-avg="${kind}${n}" data-which="current"`)}${td(bst(n, kind === 'mo' ? meanOf : average), `data-avg="${kind}${n}" data-which="best"`)}</tr>`;
+    const trs = [`<tr><td>time</td>${td(list.length ? fmtSolve(list[list.length - 1]) : '–', `data-solve="${list.length ? list[list.length - 1].id : ''}"`)}${td(best ? fmtSolve(best) : '–', `data-solve="${best ? best.id : ''}"`)}</tr>`];
+    if (ev.fmt === 'mo3') trs.push(avgRow('mo', 3));
+    trs.push(avgRow('ao', 5), avgRow('ao', 12));
+    for (const n of availableAvgs(list)) trs.push(avgRow('ao', n));
     el.sbStats.innerHTML = `<thead><tr><th></th><th>current</th><th>best</th></tr></thead><tbody>${trs.join('')}</tbody>`;
     const solved = list.filter(s => s.penalty !== 'DNF').length;
     el.sbSummary.innerHTML = `Solves: <span class="mono">${solved}/${list.length}</span><br>mean: <span class="mono">${dash(mean(list))}</span>`;
-    const line = (k, v, first) => `<div class="${first ? 'first' : ''}"><span class="k">${k}: </span><span class="v${v === 'DNF' ? ' dnf' : ''}">${v}</span></div>`;
+    const line = (k, v, first) => `<div class="${first ? 'first' : ''}${v === '–' ? '' : ' link'}" data-avg="${k}"><span class="k">${k}: </span><span class="v${v === 'DNF' ? ' dnf' : ''}">${v}</span></div>`;
     el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
 
     if (!list.length) el.timesList.innerHTML = '<div class="empty">No solves in this session yet.<br>Hold space to start.</div>';
@@ -1273,13 +1289,12 @@
       for (let i = list.length - 1; i >= 0; i--) {
         const s = list[i];
         let extra;
-        if (ev.fmt === 'ao') {
-          const a5 = i >= 4 ? average(list.slice(i - 4, i + 1)) : null, a12 = i >= 11 ? average(list.slice(i - 11, i + 1)) : null;
-          extra = `<td class="time">${a5 == null ? '-' : fmt(a5)}</td><td class="time">${a12 == null ? '-' : fmt(a12)}</td>`;
-        } else {
-          const m3 = i >= 2 ? meanOf(list.slice(i - 2, i + 1)) : null, a5 = i >= 4 ? average(list.slice(i - 4, i + 1)) : null;
-          extra = `<td class="time">${m3 == null ? '-' : fmt(m3)}</td><td class="time">${a5 == null ? '-' : fmt(a5)}</td>`;
-        }
+        const avgCell = (kind, n) => {
+          if (i < n - 1) return '<td class="time">-</td>';
+          const v = (kind === 'mo' ? meanOf : average)(list.slice(i - n + 1, i + 1));
+          return `<td class="time link" data-avg="${kind}${n}" data-end="${i}">${fmt(v)}</td>`;
+        };
+        extra = ev.fmt === 'ao' ? avgCell('ao', 5) + avgCell('ao', 12) : avgCell('mo', 3) + avgCell('ao', 5);
         const cls = best && s.id === best.id ? ' best' : (s.penalty === 'DNF' || (worst && s.id === worst.id && list.length > 1)) ? ' worst' : '';
         rows.push(`<tr data-id="${s.id}"><td>${i + 1}</td><td class="time${cls}">${fmtSolve(s)}</td>${extra}</tr>`);
       }
@@ -1287,7 +1302,52 @@
       el.timesList.innerHTML = `<table><thead><tr><th>#</th>${head}</tr></thead><tbody>${rows.join('')}</tbody></table>`;
     }
   }
-  el.timesList.addEventListener('click', e => { const tr = e.target.closest('tr[data-id]'); if (tr) openSolve(tr.dataset.id); });
+  function parseAvg(str) { return { kind: str.slice(0, 2), n: +str.slice(2) }; }
+  el.timesList.addEventListener('click', e => {
+    const cell = e.target.closest('td[data-avg]');
+    if (cell) { const { kind, n } = parseAvg(cell.dataset.avg); openAverage(+cell.dataset.end - n + 1, n, kind); return; }
+    const tr = e.target.closest('tr[data-id]'); if (tr) openSolve(tr.dataset.id);
+  });
+  el.sbStats.addEventListener('click', e => {
+    const cell = e.target.closest('td[data-avg], td[data-solve]');
+    if (!cell) return;
+    if (cell.dataset.solve) { openSolve(cell.dataset.solve); return; }
+    const { kind, n } = parseAvg(cell.dataset.avg), list = solves(), f = kind === 'mo' ? meanOf : average;
+    const start = cell.dataset.which === 'best' ? bestWindowStart(list, n, f) : list.length - n;
+    if (start >= 0) openAverage(start, n, kind);
+  });
+  el.centerStats.addEventListener('click', e => {
+    const line = e.target.closest('[data-avg]');
+    if (!line) return;
+    const { kind, n } = parseAvg(line.dataset.avg);
+    if (solves().length >= n) openAverage(solves().length - n, n, kind);
+  });
+
+  // ---- average details: the solves that make up an average, with scrambles ----
+  function openAverage(start, n, kind) {
+    const list = solves(), win = list.slice(start, start + n);
+    if (win.length !== n) return;
+    const f = kind === 'mo' ? meanOf : average, value = f(win), label = `${kind}${n}`;
+    // solves trimmed by the WCA average (best/worst 5%) are shown in parentheses
+    const trimmed = new Set();
+    if (kind === 'ao') {
+      const trim = Math.ceil(n * 0.05);
+      const order = win.map((s, i) => ({ i, v: effectiveMs(s) })).sort((a, b) => a.v - b.v);
+      for (let k = 0; k < trim; k++) { trimmed.add(order[k].i); trimmed.add(order[order.length - 1 - k].i); }
+    }
+    const rows = win.map((s, i) => {
+      const t = fmtSolve(s), shown = trimmed.has(i) ? `(${t})` : t;
+      return `<div class="row avg-row" data-id="${s.id}"><div class="value${s.penalty === 'DNF' ? ' dnf' : ''}" style="min-width:80px">${shown}</div><div class="avg-scr">${esc(s.scramble)}</div><div class="sub" style="flex:none">#${start + i + 1}</div></div>`;
+    });
+    const text = [`${label}: ${dash(value)}`, ...win.map((s, i) => `${start + i + 1}. ${trimmed.has(i) ? `(${fmtSolve(s)})` : fmtSolve(s)}   ${s.scramble.replace(/\n/g, ' / ')}`)].join('\n');
+    openDialog(`<h2>${label}: <span class="${value === Infinity ? 'dnf' : ''}" style="font-family:var(--mono)">${dash(value)}</span> <span style="color:var(--muted);font-weight:400;font-size:14px">· solves ${start + 1}–${start + n}</span></h2>
+      <div class="group">${rows.join('')}</div>
+      <div class="section-title">Copy</div><textarea class="field copy" readonly rows="4">${esc(text)}</textarea>
+      <div class="actions"><button id="dlgCopy">Copy to clipboard</button><button class="primary" id="dlgClose">Close</button></div>`, 'wide');
+    $('dlgClose').addEventListener('click', () => closeDialog());
+    $('dlgCopy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(text); $('dlgCopy').textContent = 'Copied'; } catch (e) { el.dialog.querySelector('textarea').select(); } });
+    el.dialog.querySelectorAll('.avg-row').forEach(r => r.addEventListener('click', () => openSolve(r.dataset.id)));
+  }
 
   // ---- solve details ----
   function openSolve(id) {
