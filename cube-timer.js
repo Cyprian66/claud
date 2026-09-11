@@ -765,6 +765,7 @@
     el.dialog.className = 'dialog' + (cls ? ' ' + cls : '');
     el.dialog.innerHTML = html;
     el.modalBg.classList.add('open');
+    el.dialog.scrollTop = 0;
   }
   function closeDialog(result = null) {
     el.modalBg.classList.remove('open');
