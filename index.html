@@ -111,6 +111,8 @@
   .times tr.round-head.open .r-avg { color: var(--muted); font-family: var(--font); font-weight: 500; }
   .sb-summary .target { color: var(--accent); }
   .center-stats .hit .v { color: var(--ready); }
+  .center-stats .bpa { font-size: 0.62em; }
+  .center-stats .bpa .v.ok { color: var(--ready); }
   .center-stats .miss .v { color: var(--hold); }
   .dialog .form { display: grid; gap: 10px; }
   .dialog .form label { display: grid; gap: 4px; font-size: 13px; color: var(--muted); }
@@ -978,6 +980,13 @@
     return out;
   }
   const hitTarget = avg => session().target != null && avg != null && isFinite(avg) && avg <= session().target;
+  // after 4 of 5 solves: best / worst possible ao5 (5th solve trimmed as best, or as worst/DNF)
+  function bpaWpa(four) {
+    const v = four.map(effectiveMs).sort((a, b) => a - b);
+    const m = arr => arr.includes(Infinity) ? Infinity : arr.reduce((a, b) => a + b, 0) / arr.length;
+    return { bpa: m(v.slice(0, 3)), wpa: m(v.slice(1, 4)) };
+  }
+  const showBpa = r => roundSize() === 5 && r.solves.length === 4;
 
   // =====================================================================
   //  Formatting & statistics
@@ -1393,7 +1402,9 @@
     if (rs) {
       const curR = rs[rs.length - 1], last = [...rs].reverse().find(r => r.avg != null);
       const cls = last ? (session().target == null ? '' : hitTarget(last.avg) ? ' hit' : ' miss') : '';
+      const bw = showBpa(curR) ? bpaWpa(curR.solves) : null;
       el.centerStats.innerHTML = `<div class="first"><span class="k">round ${curR.no}: </span><span class="v">${curR.solves.length}/${roundSize()}</span></div>`
+        + (bw ? `<div class="bpa"><span class="k">bpa: </span><span class="v${hitTarget(bw.bpa) ? ' ok' : ''}${bw.bpa === Infinity ? ' dnf' : ''}">${dash(bw.bpa)}</span><span class="k"> · wpa: </span><span class="v${hitTarget(bw.wpa) ? ' ok' : ''}${bw.wpa === Infinity ? ' dnf' : ''}">${dash(bw.wpa)}</span></div>` : '')
         + (last ? `<div class="link${cls}" data-avg="${roundLabel()}" data-start="${last.start}"><span class="k">round ${last.no} ${roundLabel()}: </span><span class="v${last.avg === Infinity ? ' dnf' : ''}">${dash(last.avg)}</span></div>` : `<div><span class="k">${roundLabel()}: </span><span class="v">–</span></div>`);
     } else {
       el.centerStats.innerHTML = ev.fmt === 'ao' ? line('ao5', cur(5, average), true) + line('ao12', cur(12, average)) : line('mo3', cur(3, meanOf), true) + line('ao5', cur(5, average));
@@ -1404,7 +1415,8 @@
       const rows = [];
       const roundHead = r => {
         const open = r.avg == null, cls = open ? 'open' : session().target == null ? '' : hitTarget(r.avg) ? 'hit' : 'miss';
-        const val = open ? `${r.solves.length}/${roundSize()}` : dash(r.avg);
+        const bw = open && showBpa(r) ? bpaWpa(r.solves) : null;
+        const val = open ? `${r.solves.length}/${roundSize()}${bw ? ` · bpa ${dash(bw.bpa)} · wpa ${dash(bw.wpa)}` : ''}` : dash(r.avg);
         return `<tr class="round-head ${cls}" data-start="${r.start}"${open ? '' : ' data-avg="' + roundLabel() + '"'}><td colspan="3">Round ${r.no}<span class="r-avg">${open ? val : roundLabel() + ' ' + val}</span></td></tr>`;
       };
       let roundStarts = null;
